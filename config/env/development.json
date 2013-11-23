@@ -1,0 +1,33 @@
+{
+    "cookie_secret":"cookies are not food",
+    "db": "mongodb://127.0.0.1:27017/artifacts",
+    "gridfs":{
+        "bucket" : "assets",
+        "prefix" : "",
+        "fileSizeLimit" : "1mb",
+        "contentTypeFilter" : "^image\/.*$"
+    },
+    "app": {
+        "name": "Artifacts - live games solutions system"
+    },
+    "facebook": {
+        "clientID": "APP_ID",
+        "clientSecret": "APP_SECRET",
+        "callbackURL": "http://localhost:3000/auth/facebook/callback"
+    },
+    "twitter": {
+        "clientID": "CONSUMER_KEY",
+        "clientSecret": "CONSUMER_SECRET",
+        "callbackURL": "http://localhost:3000/auth/twitter/callback"
+    },
+    "github": {
+        "clientID": "APP_ID",
+        "clientSecret": "APP_SECRET",
+        "callbackURL": "http://localhost:3000/auth/github/callback"
+    },
+    "google": {
+        "clientID": "APP_ID",
+        "clientSecret": "APP_SECRET",
+        "callbackURL": "http://localhost:3000/auth/google/callback"
+    }
+}

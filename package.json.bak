@@ -1,0 +1,49 @@
+{
+    "name": "Artifacts",
+    "description": "Artifacts - live games solutions system",
+    "version": "0.1.0",
+    "private": false,
+    "author": "Amir Arad",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/linnovate/mean.git"
+    },
+    "engines": {
+        "node": "0.10.x",
+        "npm": "1.2.x"
+    },
+    "scripts": {
+        "start": "node node_modules/grunt-cli/bin/grunt",
+        "test": "node node_modules/grunt-cli/bin/grunt test",
+        "postinstall": "bower install"
+    },
+    "dependencies": {
+        "express": "latest",
+        "jade": "latest",
+        "mongodb": "latest",
+        "connect-mongo": "latest",
+        "connect-flash": "latest",
+        "crypto": "latest",
+        "passport": "latest",
+        "passport-local": "latest",
+        "underscore": "latest",
+        "view-helpers": "latest",
+        "winston": "latest",
+        "forever": "latest",
+        "bower": "latest",
+        "grunt": "latest",
+        "grunt-cli": "latest",
+        "grunt-env": "latest",
+        "pause-stream": "latest",
+        "busboy" : "latest"
+    },
+    "devDependencies": {
+        "supertest": "latest",
+        "should": "latest",
+        "grunt-contrib-watch": "latest",
+        "grunt-contrib-jshint": "latest",
+        "grunt-nodemon": "latest",
+        "grunt-concurrent": "latest",
+        "grunt-mocha-test": "latest"
+    }
+}
