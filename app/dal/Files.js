@@ -1,14 +1,14 @@
 /**
- * module for streams-based CRUD operations
+ * module for streams-based CRD operations on files
  * User: amira
  * Date: 11/23/13
  * Time: 2:35 PM
- * To change this template use File | Settings | File Templates.
  */
 
 var utils = require('./utils');
 var pauseStream = require('pause-stream');
 var GridStore = require('mongodb').GridStore;
+
 /**
  * Options
  *  - **collectionName**, {String} the name of the collection this dao addresses
@@ -20,8 +20,16 @@ var GridStore = require('mongodb').GridStore;
  */
 module.exports = function (app, options){
     var root = options.collectionName;
-    if (utils.endsWith(root, '.files')){
-        root = root.substring(0, root.lastIndexOf('.files'));
+
+    options.collectionName = options.collectionName + '.files';
+    var metadataDao = new (require('../dal/Dao'))(app, options);
+
+
+    /**
+     * get a Dao object for the metadata entity
+     */
+    this.getMetadataDao = function(){
+        return metadataDao;
     }
 
     /**
@@ -32,13 +40,14 @@ module.exports = function (app, options){
      *  - **content_type** {String}, mime type of the file. Defaults to **{GridStore.DEFAULT_CONTENT_TYPE}**.
      *  - **metadata** {Object}, arbitrary data the user wants to store.
      *
-     * @param stream  input stream of the file
+     * @param readableStream  input stream of the file
      * @param options filename + <a href="http://mongodb.github.io/node-mongodb-native/api-generated/gridstore.html">GridStore c'tor options</a>
      * @param callback function(err, data) to call.
      */
-    this.insert = function(stream, options, callback){
-        var pStream = pauseStream();            // use pause stream to close the pipe until its connected to an open mongo file
-        stream.pipe(pStream.pause());
+    this.insert = function(readableStream, options, callback){
+        // use pause stream to close the pipe until its connected to an open mongo file
+        var pStream = pauseStream();
+        readableStream.pipe(pStream.pause());
         app.logger.debug('inserting file: '+ filename);
         var id = null;
         var filename = utils.popAttr(options, 'filename');
@@ -46,94 +55,50 @@ module.exports = function (app, options){
         new GridStore(app.db, id, filename , 'w', options)
             .open(function(err, gridFile) {
                 if(err) return callback(err);
-                pStream.pipe(gridFile);         // connect paused pipe to the open mongo file
+                // connect paused pipe to the open mongo file (it's a writable stream)
+                pStream.pipe(gridFile);
                 app.logger.debug("Opened mongo gridFs file " + filename);
                 // listen for file end
                 gridFile.on('close', function() {
                     app.logger.debug("Written mongo gridFs file " + filename);
                     gridFile.close(callback);
                 });
-                pStream.resume();               // open the pipe and let the data flow
+                // open the pipe and let the data flow
+                pStream.resume();
             });
     };
 
     /**
-     * Updates a file
-     *
-     * Options, mainly:
-     *  - **filename** {String}, filename for this file, no unique constrain on the field.
-     *  - **content_type** {String}, mime type of the file. Defaults to **{GridStore.DEFAULT_CONTENT_TYPE}**.
-     *  - **metadata** {Object}, arbitrary data the user wants to store.
-     *
-     * @param stream  input stream of the file
-     * @param options filename + <a href="http://mongodb.github.io/node-mongodb-native/api-generated/gridstore.html">GridStore c'tor options</a>
-     * @param callback function(err, data) to call.
+     * removes a file
      */
-    this.insert = function(stream, options, callback){
-        var pStream = pauseStream();            // use pause stream to close the pipe until its connected to an open mongo file
-        stream.pipe(pStream.pause());
-        app.logger.debug('inserting file: '+ filename);
-        var id = null;
-        var filename = utils.popAttr(options, 'filename');
-        options.root = root;
-        new GridStore(app.db, id, filename , 'w', options)
+    this.remove = function(fileMetaData, callback){
+        new GridStore(app.db, fileMetaData._id, 'r', {'root' : root})
             .open(function(err, gridFile) {
                 if(err) return callback(err);
-                pStream.pipe(gridFile);         // connect paused pipe to the open mongo file
-                app.logger.debug("Opened mongo gridFs file " + filename);
-                // listen for file end
-                gridFile.on('close', function() {
-                    app.logger.debug("Written mongo gridFs file " + filename);
+                app.logger.debug("Opened mongo gridFs file " + fileMetaData._id);
+                gridFile.unlink(function(err, gridFile) {
+                    if(err) return callback(err);
+                    app.logger.debug("Deleted mongo gridFs file " + fileMetaData._id);
                     gridFile.close(callback);
                 });
-                pStream.resume();               // open the pipe and let the data flow
             });
     };
 
-    // TODO continue. old stuff for reference :
 
-
-    var _this = this;
-    if (!options.id) options.id = '_id';
-
-// functionality will be added to the dao only after there is a collection
-    app.db.collection(options.collectionName, function(err, collection) {
-        if (err) throw err;
-
-        _this.collection = collection;
-
-        var list = utils.getListFunction(options.listFields, collection);
-
-        /**
-         * Load list of entities
-         */
-        _this.list = function(query, callback){
-            if (typeof query === 'function'){
-                callback = query;
-                query = {};
-            }
-            list(query).toArray(callback);
-        };
-
-        /**
-         * Load an entity by id
-         */
-        _this.load = function(id, callback){
-            collection.findOne(utils.getSelectorById(options, id, true),callback);
-        }
-
-        /**
-         * Change an entity
-         */
-        _this.update = function(entity, callback){
-            collection.update(utils.getSelectorById(options, entity[options.id]), entity, {'safe':true}, callback);
-        };
-
-        /**
-         * Delete an entity
-         */
-        _this.remove = function(entity, callback){
-            collection.remove(utils.getSelectorById(options, entity[options.id]), callback);
-        };
-    });
+    /**
+     * reads a file
+     */
+    this.load = function(fileMetaData, writeableStream, callback){
+        new GridStore(app.db, fileMetaData._id, null, 'r', {'root' : root})
+            .open(function(err, gridFile) {
+                if(err) return callback(err);
+                app.logger.debug("Opened mongo gridFs file " + fileMetaData._id);
+                gridFile.on('close', function() {
+                    app.logger.debug("Read mongo gridFs file " + fileMetaData._id);
+                    gridFile.close(callback);
+                });
+                // open the pipe and let the data flow
+                gridFile.stream().pipe(writeableStream);
+            });
+    };
 }
