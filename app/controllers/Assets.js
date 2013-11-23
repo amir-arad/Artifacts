@@ -13,16 +13,12 @@ var utils = require('./utils');
 
 
 module.exports = function (app, config){
-
-    if (!config.gridfsPrefix) config.gridfsPrefix = '';
-    // define dao for artifacts
-    var dalOptions = {
-        'collectionName': config.gridfs.bucket + '.files',
+    // define dao for asset files and metadatas
+    var files = new (require('../dal/Files'))(app, {
+        'collectionName': config.gridfs.bucket,
         'listFields': ['length', 'filename', 'contentType', 'uploadDate', 'metadata']
-    };
-    var dao = new (require('../dal/Dao'))(app, dalOptions);
-    var files = new (require('../dal/Files'))(app, dalOptions);
-
+    });
+    var dao = files.getMetadataDao();
 
     /**
      * Find asset by id
@@ -34,7 +30,7 @@ module.exports = function (app, config){
             if (err) return next(err);
             if (!asset) return next(new Error('Failed to load asset ' + id));
             if (!asset.metadata || !asset.metadata.game) return next(new Error('Corrupted asset ' + asset));
-            if (!asset.game || !asset.metadata.game.equals(game._id)) return next(new Error('Asset does not match game ' + asset));
+            if (!asset.metadata.game.equals(game._id)) return next(new Error('Asset does not match game ' + asset));
             req.asset = asset;
             return next();
         });
@@ -42,6 +38,7 @@ module.exports = function (app, config){
 
     /**
      * Create an asset
+     * This means streaming up the content as files
      */
     this.create = function(req, res, next) {
         // see https://github.com/mscdex/busboy
@@ -78,7 +75,11 @@ module.exports = function (app, config){
 
         busboy.on('field', function(fieldname, val, valTruncated, keyTruncated) {
             if (fieldname == 'items'){
-                items = val.split(' ');
+                items = parseItems(val);
+                if (resVals.length > 0 && items.length > 0){
+                    // TODO implement
+                    app.logger.error("need to handle items : " + items);
+                }
             }
         });
 
@@ -87,10 +88,6 @@ module.exports = function (app, config){
             waitCounter--;
             // wait until all files are finished
             if (waitCounter == 0) {
-                if (items.length > 0){
-                    // TODO implement
-                    app.logger.error("need to handle items : " + items);
-                }
                 if(res.finished) return;
                 res.jsonp(resVals);
             }
@@ -101,16 +98,21 @@ module.exports = function (app, config){
         req.pipe(busboy);
     };
 
+
+    function parseItems(raw) {
+        return raw ? raw.split(' ') : [];
+    }
+
     /**
      * Update an assets
      */
     this.update = function(req, res, next) {
         var asset = utils.updateCopyExcept(req.asset, req.body, ['_id', 'items']);
-        artifact.game = game._id;
-        artifact.metaData.items
+        asset.game = game._id;
+        asset.metaData.items = parseItems(req.body.items);
         dao.update(asset, function(err) {
             if (err) return next(err);
-            res.jsonp(game);
+            res.jsonp(asset);
         });
     };
 
@@ -118,19 +120,25 @@ module.exports = function (app, config){
      * Delete an assets
      */
     this.destroy = function(req, res, next) {
-        var game = req.game;
-        // TODO remove all related assets
-        dao.remove(game, function(err) {
+        var asset = req.asset;
+        files.remove(asset, function(err) {
             if (err) return next(err);
-            res.jsonp(game);
+            res.jsonp(asset);
         });
     };
 
     /**
      * Show an asset
      */
-    this.show = function(req, res) {
-        res.jsonp(req.game);
+    this.show = function(req, res, next) {
+        var asset = req.asset;
+        res.setHeader("Content-Type", asset.contentType);
+        res.setHeader("Content-Length", asset.length);
+        res.setHeader("Content-MD5", asset.md5);
+        files.load(req.asset, res, function(err){
+            if (err) return next(err);
+            if(!res.finished) return next(err);
+        });
     };
 
 
@@ -139,9 +147,9 @@ module.exports = function (app, config){
      */
     this.listByGame = function(req, res, next) {
         var game = req.game;
-        dao.list({'metadata.game' : game._id}, function(err, games) {
+        dao.list({'metadata.game' : game._id}, function(err, assets) {
             if (err) return next(err);
-            res.jsonp(games);
+            res.jsonp(assets);
         });
     };
 };

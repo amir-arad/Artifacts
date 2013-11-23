@@ -1,6 +1,7 @@
 
 module.exports = function(app, config, passport, auth) {
     // TODO add authorization and authenticatoin
+    // TODO consider more http response headers like Allow : http://en.wikipedia.org/wiki/List_of_HTTP_header_fields.
 
     var games = new (require('../app/controllers/Games'))(app, config);
     app.param('gameId', games.game);

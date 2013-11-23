@@ -112,4 +112,17 @@ module.exports = function (app, config){
             res.jsonp(games);
         });
     };
+
+    /**
+     * List of artifacts in a game
+     */
+    this.listByGeoLocation = function(req, res, next) {
+        var game = req.game;
+        var location = req.location;
+        // TODO implement
+        dao.list({'game' : game._id, 'location' : player.name}, function(err, games) {
+            if (err) return next(err);
+            res.jsonp(games);
+        });
+    };
 };
