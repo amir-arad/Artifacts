@@ -19,6 +19,11 @@ function formatListFields(listFields) {
     return listFields;
 }
 
+
+module.exports.id = function id(id){
+    return new ObjectId(id);
+};
+
 module.exports.getListFunction = function getListFunction(listFields, collection) {
     if (listFields){
         listFields = formatListFields(listFields);
@@ -32,7 +37,7 @@ module.exports.getListFunction = function getListFunction(listFields, collection
 
 module.exports.getSelectorById = function getSelectorById(options, id, wrapWithObj) {
     var res = {};
-    res[options.id] = (wrapWithObj ? new ObjectId(id) : id);
+    res[options.id] = (wrapWithObj ? module.exports.id(id) : id);
     return res;
 }
 

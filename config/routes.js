@@ -33,11 +33,20 @@ module.exports = function(app, config, passport, auth) {
    // var multipart = new (require('../app/controllers/Multipart'))(app, config);
     var assets = new (require('../app/controllers/Assets'))(app, config);
     app.param('assetId', assets.asset);
-    app.get('/games/:gameId/assets', assets.listByGame);
-    app.post('/games/:gameId/assets', assets.create);
+    app.get('/games/:gameId/assets', assets.list);
     app.get('/games/:gameId/assets/:assetId', assets.show);
+    app.post('/games/:gameId/assets', assets.create);
     app.put('/games/:gameId/assets/:assetId', assets.update);
     app.del('/games/:gameId/assets/:assetId', assets.destroy);
+
+    app.get('/games/:gameId/artifacts/:artifactId/assets', assets.list);
+    app.post('/games/:gameId/artifacts/:artifactId/assets', assets.create);
+    app.put('/games/:gameId/artifacts/:artifactId/assets/:assetId', assets.update);
+    app.del('/games/:gameId/artifacts/:artifactId/assets/:assetId', assets.update);
+
+    // specific hack for nicely display of artifact to the user
+    app.param('assetFileName', assets.assetAsFile);
+    app.get('/games/:gameId/artifacts/:artifactId/:assetFileName', assets.show);
 
 }
 

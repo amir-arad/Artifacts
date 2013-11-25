@@ -20,6 +20,8 @@ module.exports = function (app, options){
     var _this = this;
     if (!options.id) options.id = '_id';
 
+    this.id = utils.id;
+
     // functionality will be added to the dao only after there is a collection
     app.db.collection(options.collectionName, function(err, collection) {
         if (err) throw err;
@@ -40,10 +42,14 @@ module.exports = function (app, options){
         };
 
         /**
-         * Load an entity by id
+         * Load an entity by id or query
          */
-        _this.load = function(id, callback){
-            collection.findOne(utils.getSelectorById(options, id, true),callback);
+        _this.load = function(query, callback){
+            if (typeof query === 'object'){
+                collection.findOne(query, callback);
+            } else {
+                collection.findOne(utils.getSelectorById(options, query, true),callback);
+            }
         }
 
         /**

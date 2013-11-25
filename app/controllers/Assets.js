@@ -21,16 +21,48 @@ module.exports = function (app, config){
     var dao = files.getMetadataDao();
 
     /**
-     * Find asset by id
+     * Find asset by id,
      */
     this.asset = function(req, res, next, id) {
         var game = req.game;
+        var artifact = req.artifact;
         if (!game || !game._id) return next(new Error('No game id ' + game));
-        dao.load(id, function(err, asset) {
+        var query = {
+            '_id' : dao.id(id),
+            'metadata.game' : game._id
+        };
+        if (artifact && req.method !== 'PUT'){
+            // asset expected to be in an artifact
+            if (!artifact._id) return next(new Error('No artifact id ' + artifact));
+            query['metadata.artifacts'] = artifact._id;
+        }
+        dao.load(query, function(err, asset) {
             if (err) return next(err);
             if (!asset) return next(new Error('Failed to load asset ' + id));
-            if (!asset.metadata || !asset.metadata.game) return next(new Error('Corrupted asset ' + asset));
-            if (!asset.metadata.game.equals(game._id)) return next(new Error('Asset does not match game ' + asset));
+            if (!asset.metadata.artifacts) return next(new Error('Corrupted asset ' + asset));
+            req.asset = asset;
+            return next();
+        });
+    };
+
+    /**
+     * Find asset by id,
+     * or if in artifact - by filename
+     */
+    this.assetAsFile = function(req, res, next, id) {
+        var game = req.game;
+        var artifact = req.artifact;
+        if (!game || !game._id) return next(new Error('No game id ' + game));
+        if (!artifact || !artifact._id) return next(new Error('No artifact id ' + artifact));
+        // Find asset by in artifact by filename
+        var query = {
+            'filename' : id,
+            'metadata.game' : game._id,
+            'metadata.artifacts' : artifact._id
+        };
+        dao.load(query, function(err, asset) {
+            if (err) return next(err);
+            if (!asset) return next(new Error('Failed to load asset ' + id));
             req.asset = asset;
             return next();
         });
@@ -45,7 +77,8 @@ module.exports = function (app, config){
         var busboy = new Busboy({ headers: req.headers });
         var waitCounter = 1;            // the form itself is 1
         var resVals = [];
-        var items = [];
+        var artifacts = [];
+        if (req.artifact) artifacts.push(req.artifact._id);
 
         busboy.on('file', function(fieldname, stream, filename, encoding, contentType) {
             if (typeof filename === 'undefined') {
@@ -60,7 +93,7 @@ module.exports = function (app, config){
                     'content_type' : contentType,
                     'metadata' : {
                         'game' : req.game._id,
-                        'items' : items
+                        'artifacts' : artifacts
                     }
                 };
                 files.insert(stream, fileOptions, function(err, file){
@@ -72,17 +105,6 @@ module.exports = function (app, config){
                 });
             }
         });
-
-        busboy.on('field', function(fieldname, val, valTruncated, keyTruncated) {
-            if (fieldname == 'items'){
-                items = parseItems(val);
-                if (resVals.length > 0 && items.length > 0){
-                    // TODO implement
-                    app.logger.error("need to handle items : " + items);
-                }
-            }
-        });
-
         // at the end of the last file write, or the form's input, send resVals to the client
         function endOfFileWriteOrFormInput() {
             waitCounter--;
@@ -103,13 +125,40 @@ module.exports = function (app, config){
         return raw ? raw.split(' ') : [];
     }
 
+    function arrayRemove(array, val) {
+        return array.filter(function (e) {
+            return ! val.equals(e);
+        });
+    }
+
     /**
      * Update an assets
      */
     this.update = function(req, res, next) {
-        var asset = utils.updateCopyExcept(req.asset, req.body, ['_id', 'items']);
-        asset.game = game._id;
-        asset.metaData.items = parseItems(req.body.items);
+        var asset = req.asset;
+        var game = req.game;
+        var artifact = req.artifact;
+        if (!game || !game._id) return next(new Error('No game id ' + game));
+        if (!asset || !asset._id) return next(new Error('No asset id ' + asset));
+        if (artifact){
+            if (!artifact._id) return next(new Error('No artifact id ' + artifact));
+            switch (req.method) {
+                case 'DELETE':
+                    asset.metadata.artifacts = arrayRemove(asset.metadata.artifacts, artifact._id);
+                    break;
+                case 'PUT':
+                    asset.metadata.artifacts = arrayRemove(asset.metadata.artifacts, artifact._id);
+                    asset.metadata.artifacts.push(artifact._id);
+                    break;
+                default :
+                    return next(new Error('Unknown method for artifact update operation : ' + req.method));
+                    break;
+            }
+        } else {
+            asset = utils.updateCopyExcept(asset, req.body, ['_id', 'artifacts']);
+            asset.game = game._id;
+            asset.metadata.artifacts = parseItems(req.body.artifacts);
+        }
         dao.update(asset, function(err) {
             if (err) return next(err);
             res.jsonp(asset);
@@ -140,14 +189,17 @@ module.exports = function (app, config){
             if(!res.finished) return next(err);
         });
     };
-
-
     /**
-     * List of assets in a game
+     * List of assets
+     * may be filtered by game or artifact if present in the request context
      */
-    this.listByGame = function(req, res, next) {
+    this.list = function(req, res, next) {
         var game = req.game;
-        dao.list({'metadata.game' : game._id}, function(err, assets) {
+        var artifact = req.artifact;
+        var query = {};
+        if (game) query['metadata.game'] = game._id;
+        if (artifact) query['metadata.artifacts'] = artifact._id;
+        dao.list(query, function(err, assets) {
             if (err) return next(err);
             res.jsonp(assets);
         });
