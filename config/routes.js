@@ -15,12 +15,12 @@ module.exports = function(app, config, passport) {
     var silentOk = function (req, res) {
         res.send(204);         // OK, No Content
     };
-    app.post('/login', auth.admin.authenticate, silentOk);
+    app.post('/login', auth.sysop.authenticate, silentOk);
 
     var games = new (require('../app/controllers/Games'))(app, config);
     app.param('gameId', games.game);
-    app.get('/games', auth.admin.authorize, games.list);
-    app.post('/games', auth.admin.authorize, games.create);
+    app.get('/games', auth.sysop.authorize, games.list);
+    app.post('/games', auth.sysop.authorize, games.create);
 
     app.post('/games/:gameId/login', auth.storyteller.authenticate, silentOk);
 
