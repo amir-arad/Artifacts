@@ -55,6 +55,7 @@ module.exports = function (app, config){
 
         // the creation itself
         game.players[player.name] = player;
+        res.statusCode = 201;
         updateGameReturnPlayer(game, next, res, player);
     };
 

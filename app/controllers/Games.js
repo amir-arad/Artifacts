@@ -40,6 +40,7 @@ module.exports = function (app, config){
 
         dao.insert(game, function(err) {
             if (err) return next(err);
+            res.statusCode = 201;
             res.jsonp(game);
         });
     };

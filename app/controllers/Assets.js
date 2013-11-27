@@ -111,6 +111,7 @@ module.exports = function (app, config){
             // wait until all files are finished
             if (waitCounter == 0) {
                 if(res.finished) return;
+                res.statusCode = 201;
                 res.jsonp(resVals);
             }
         }

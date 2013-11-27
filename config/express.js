@@ -66,6 +66,12 @@ module.exports = function(app, config, passport, db) {
         //use passport session
         app.use(passport.initialize());
         app.use(passport.session());
+        passport.serializeUser(function(user, done) {
+            return done(null, JSON.stringify(user));
+        });
+        passport.deserializeUser(function(user, done) {
+            return done(null, JSON.parse(user));
+        });
 
         //routes should be at the last
         app.use(app.router);

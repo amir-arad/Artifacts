@@ -3,16 +3,14 @@
  */
 var express = require('express');
 var fs = require('fs');
-var passport = require('passport');
 var mongodb = require('mongodb');
+var passport = require('passport');
 
 /**
  * Main application entry file.
  * Please note that the order of loading is important.
  */
-var logger = require('./config/logger'),
-    config = require('./config/config'),
-    auth = require('./config/middlewares/authorization');
+var config = require('./config/config');
 
 // mongoose.connect(config.db);
 
@@ -37,7 +35,7 @@ walk(models_path);*/
 // require('./config/passport')(passport);
 
 var app = express();
-app.logger = logger;
+app.logger = require('./config/logger');
 
 // first connect to DB
 require('./config/mongo')(app, config, function(err, db){
@@ -51,7 +49,7 @@ require('./config/mongo')(app, config, function(err, db){
     require('./config/express')(app, config, passport, db);
 
     //Bootstrap routes
-    require('./config/routes')(app, config, passport, auth);
+    require('./config/routes')(app, config, passport);
 
     //Start the app by listening on <port>
     var port = process.env.PORT || config.port;
