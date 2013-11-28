@@ -38,12 +38,8 @@ module.exports = function (app, config, passport, strategyName, getUserFromReq, 
     this.authenticate = [busboy({limit : {fields : 1, files : 0, fieldSize : 128}}),    // use busboy to handle the form data
         function(req, res, next) {
             req.busboy.on('field', function(fieldname, val) {
-                if (fieldname === 'password'){
-                    if (!req.body) req.body = {};
-                    req.body.password = val;
-                } else {
-                    app.logger.info('unknown field : ' + fieldname);
-                }
+                if (!req.body) req.body = {};
+                req.body.password = val;
             });
             req.busboy.on('end', next);
             req.pipe(req.busboy);
