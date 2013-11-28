@@ -8,7 +8,7 @@
     "gridfs" : {
         "bucket" : "assets",
         "prefix" : "",
-        "fileSizeLimit" : "1mb",
+        "fileSizeLimit" : 17000000,
         "contentTypeFilter" : "^image\/.*$"
     }
 }

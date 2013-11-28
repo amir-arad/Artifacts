@@ -35,7 +35,7 @@
         "grunt-cli": "latest",
         "grunt-env": "latest",
         "pause-stream": "latest",
-        "busboy" : "latest"
+        "connect-busboy" : "latest"
     },
     "devDependencies": {
         "supertest": "latest",

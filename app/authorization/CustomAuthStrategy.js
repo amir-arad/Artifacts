@@ -5,6 +5,7 @@
  * Time: 11:03 PM
  */
 
+var busboy = require('connect-busboy');
 var express = require('express');
 var util = require('util');
 var LocalStrategy = require('passport-local').Strategy;
@@ -34,6 +35,19 @@ module.exports = function (app, config, passport, strategyName, getUserFromReq, 
         }
     };
 
-    this.authenticate = [express.multipart(), passport.authenticate(strategyName)];
+    this.authenticate = [busboy({limit : {fields : 1, files : 0, fieldSize : 128}}),    // use busboy to handle the form data
+        function(req, res, next) {
+            req.busboy.on('field', function(fieldname, val) {
+                if (fieldname === 'password'){
+                    if (!req.body) req.body = {};
+                    req.body.password = val;
+                } else {
+                    app.logger.info('unknown field : ' + fieldname);
+                }
+            });
+            req.busboy.on('end', next);
+            req.pipe(req.busboy);
+        },
+        passport.authenticate(strategyName)];
 
 };

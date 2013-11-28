@@ -8,7 +8,7 @@
 /**
  * Module dependencies.
  */
-var Busboy = require('busboy');
+var busboy = require('connect-busboy');
 var utils = require('./utils');
 
 
@@ -72,54 +72,53 @@ module.exports = function (app, config){
      * Create an asset
      * This means streaming up the content as files
      */
-    this.create = function(req, res, next) {
-        // see https://github.com/mscdex/busboy
-        var busboy = new Busboy({ headers: req.headers });
-        var waitCounter = 1;            // the form itself is 1
-        var resVals = [];
-        var artifacts = [];
-        if (req.artifact) artifacts.push(req.artifact._id);
+    this.create = [busboy({limit : {fields : 0, files : 5, fileSize : config.gridfs.fileSizeLimit}}),        // use busboy middleware see https://github.com/mscdex/connect-busboy
+        function(req, res, next) {
+            var waitCounter = 1;            // the form itself is 1
+            var resVals = [];
+            var artifacts = [];
+            if (req.artifact) artifacts.push(req.artifact._id);
 
-        busboy.on('file', function(fieldname, stream, filename, encoding, contentType) {
-            if (typeof filename === 'undefined') {
-                // submitted file field with no file in it.
-                // consume stream so busboy will finish
-                stream.on('readable', stream.read);
-            } else {
-                waitCounter++;                   // each file adds 1
-                app.logger.debug("file : " + filename);
-                var fileOptions = {
-                    'filename' : filename,
-                    'content_type' : contentType,
-                    'metadata' : {
-                        'game' : req.game._id,
-                        'artifacts' : artifacts
-                    }
-                };
-                files.insert(stream, fileOptions, function(err, file){
-                    if (err) return next(err);
-                    app.logger.info("asset created " + file);
-                    // settings
-                    resVals.push(file);
-                    endOfFileWriteOrFormInput();
-                });
+            req.busboy.on('file', function(fieldname, stream, filename, encoding, contentType) {
+                if (typeof filename === 'undefined') {
+                    // submitted file field with no file in it.
+                    // consume stream so busboy will finish
+                    stream.on('readable', stream.read);
+                } else {
+                    waitCounter++;                   // each file adds 1
+                    app.logger.debug("file : " + filename);
+                    var fileOptions = {
+                        'filename' : filename,
+                        'content_type' : contentType,
+                        'metadata' : {
+                            'game' : req.game._id,
+                            'artifacts' : artifacts
+                        }
+                    };
+                    files.insert(stream, fileOptions, function(err, file){
+                        if (err) return next(err);
+                        app.logger.info("asset created " + file);
+                        // settings
+                        resVals.push(file);
+                        endOfFileWriteOrFormInput();
+                    });
+                }
+            });
+            // at the end of the last file write, or the form's input, send resVals to the client
+            function endOfFileWriteOrFormInput() {
+                waitCounter--;
+                // wait until all files are finished
+                if (waitCounter == 0) {
+                    if(res.finished) return;
+                    res.statusCode = 201;
+                    res.jsonp(resVals);
+                }
             }
-        });
-        // at the end of the last file write, or the form's input, send resVals to the client
-        function endOfFileWriteOrFormInput() {
-            waitCounter--;
-            // wait until all files are finished
-            if (waitCounter == 0) {
-                if(res.finished) return;
-                res.statusCode = 201;
-                res.jsonp(resVals);
-            }
-        }
 
-        busboy.on('end', endOfFileWriteOrFormInput);
-        app.logger.debug("connecting request to busboy");
-        req.pipe(busboy);
-    };
+            req.busboy.on('end', endOfFileWriteOrFormInput);
+            app.logger.debug("connecting request to busboy");
+            req.pipe(req.busboy);
+        }];
 
 
     function parseItems(raw) {
