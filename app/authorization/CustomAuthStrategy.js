@@ -1,11 +1,11 @@
 /**
  * Generic local authorization strategy
+ * assumes a single field in the log in, called 'password'
  * User: amira
  * Date: 11/27/13
  * Time: 11:03 PM
  */
 
-var busboy = require('connect-busboy');
 var express = require('express');
 var util = require('util');
 var LocalStrategy = require('passport-local').Strategy;
@@ -35,15 +35,6 @@ module.exports = function (app, config, passport, strategyName, getUserFromReq, 
         }
     };
 
-    this.authenticate = [busboy({limit : {fields : 1, files : 0, fieldSize : 128}}),    // use busboy to handle the form data
-        function(req, res, next) {
-            req.busboy.on('field', function(fieldname, val) {
-                if (!req.body) req.body = {};
-                req.body.password = val;
-            });
-            req.busboy.on('end', next);
-            req.pipe(req.busboy);
-        },
-        passport.authenticate(strategyName)];
+    this.authenticate = passport.authenticate(strategyName);
 
 };
