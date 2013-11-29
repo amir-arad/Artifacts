@@ -45,10 +45,7 @@ module.exports = function (app, config){
         // validation
         var err;
         if (err = validateGameAndLocation(game, artifact)) return callback(err);
-        dao.insert(artifact, function(err) {
-            if (err) return callback(err);
-            return callback(null, artifact);
-        });
+        dao.insert(artifact, callback);
     };
 
     /**
@@ -67,26 +64,20 @@ module.exports = function (app, config){
      * Delete an artifact
      */
     this.destroy = function(artifact, callback) {
-        dao.remove(artifact, function(err) {
-            return callback(err, err ? null : artifact);
-        });
+        dao.remove(artifact, callback);
     };
 
     /**
      * List of artifacts in a game
      */
     this.listByGame = function(game, callback) {
-        dao.list({'game' : game._id}, function(err, artifacts) {
-            return callback(err, err ? null : artifacts);
-        });
+        dao.list({'game' : game._id}, callback);
     };
 
     /**
      * List of artifacts owned by a player
      */
     this.listByPlayer = function(game, player, callback) {
-        dao.list({'game' : game._id, 'location' : player.name}, function(err, artifacts) {
-            return callback(err, err ? null : artifacts);
-        });
+        dao.list({'game' : game._id, 'location' : player.name}, callback);
     };
 };

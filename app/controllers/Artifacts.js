@@ -47,7 +47,7 @@ module.exports = function (app, config){
      * Delete an artifact
      */
     this.destroy = function(req, res, next) {
-        service.destroy(req.artifact, function(err) {
+        service.destroy(req.artifact, function(err, artifact) {
             if (err) return next(err);
             res.jsonp(artifact);
         });

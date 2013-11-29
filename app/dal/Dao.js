@@ -56,7 +56,9 @@ module.exports = function (app, options){
          * Create an entity
          */
         _this.insert = function(entity, callback){
-            collection.insert(entity, {'safe':true}, callback);
+            collection.insert(entity, {'safe':true}, function(err, resArr) {
+                return callback(err, err? null : resArr[0]);
+            });
         };
 
         /**
@@ -83,7 +85,9 @@ module.exports = function (app, options){
          * Delete an entity
          */
         _this.remove = function(entity, callback){
-            collection.remove(utils.getSelectorById(options, entity[options.id]), callback);
+            collection.remove(utils.getSelectorById(options, entity[options.id]), function(err) {
+                return callback(err, err? null : entity);
+            });
         };
     });
 }
