@@ -1,9 +1,7 @@
 /**
- * Created with IntelliJ IDEA.
  * User: amira
  * Date: 11/23/13
  * Time: 12:35 PM
- * To change this template use File | Settings | File Templates.
  */
 
 var mongodb = require('mongodb');
