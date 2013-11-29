@@ -27,6 +27,7 @@
         "passport": "latest",
         "passport-local": "latest",
         "underscore": "latest",
+        "keypath": "latest",
         "view-helpers": "latest",
         "winston": "latest",
         "forever": "latest",

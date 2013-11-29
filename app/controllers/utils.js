@@ -19,10 +19,6 @@ module.exports.writeJsonToRes = function writeJsonPToRes(app, req, res, obj) {
     res.write(partOfResponse);
 }
 
-function clone(src) {
-    return JSON.parse(JSON.stringify(src));
-}
-
 module.exports.updateCopyExcept = function updateCopyExcept(src, updates, except) {
     var originals = {};
     if (typeof except === 'string'){
@@ -32,7 +28,7 @@ module.exports.updateCopyExcept = function updateCopyExcept(src, updates, except
             originals[except[i]] = src[except[i]];
         }
     }
-    return _.extend(clone(src), updates, originals);
+    return _.extend(_.clone(src), updates, originals);
 }
 
 module.exports.nullStream = function(){

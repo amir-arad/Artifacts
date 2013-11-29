@@ -1,10 +1,9 @@
 /**
- * Controller for the game entity lifecycle management.
+ * Service for the game entity lifecycle management.
  * User: amira
  * Date: 11/21/13
  * Time: 9:27 PM
  */
-var utils = require('./utils');
 
 module.exports = function (app, config){
     /**

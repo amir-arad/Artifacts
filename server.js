@@ -51,6 +51,11 @@ require('./config/mongo')(app, config, function(err, db){
     //Bootstrap routes
     require('./config/routes')(app, config, passport);
 
+    if (config.bootstrapSampleGame){
+        //Bootstrap sample game
+        require('./sampleGame')(app, config);
+    }
+
     //Start the app by listening on <port>
     var port = process.env.PORT || config.port;
     app.listen(port);

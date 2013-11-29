@@ -1,5 +1,5 @@
 /**
- * Controller for the player entity lifecycle management.
+ * Service for the player entity lifecycle management.
  * player resides inside a game entity.
  * using the replacement approach with no locking (functionality first)
  * TODO switch to findAndModify or add optimistic locking
@@ -9,7 +9,6 @@
  * Time: 3:27 PM
  */
 
-var utils = require('./utils');
 
 module.exports = function (app, config){
     /**

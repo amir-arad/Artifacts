@@ -60,10 +60,23 @@ module.exports = function (app, options){
         };
 
         /**
-         * Change an entity
+         * Update an entity
          */
         _this.update = function(entity, callback){
-            collection.update(utils.getSelectorById(options, entity[options.id]), entity, {'safe':true}, callback);
+            var query = utils.getSelectorById(options, entity[options.id]);
+            collection.update(query, entity, {'safe':true}, callback);
+        };
+
+        /**
+         * Update fields in an entity
+         */
+        _this.updateFields = function(entity, fields, callback){
+            utils.removeField(fields, options.id);   // safety
+            var update = utils.getUpdate(entity, fields);
+            var query = utils.getSelectorById(options, entity[options.id]);
+            var sort = [['_id', 'asc']];
+            app.logger.debug("update : " + JSON.stringify(update));
+            collection.findAndModify(query, sort, update, {'safe':true, 'new':true}, callback);
         };
 
         /**
