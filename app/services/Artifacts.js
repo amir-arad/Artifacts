@@ -7,7 +7,6 @@
 
 var _ = require('underscore');
 var util = require('util');
-var errors = require('./errors');
 
 module.exports = function (app, config){
     /**
@@ -25,7 +24,7 @@ module.exports = function (app, config){
         if (!game || !game._id) return callback(new Error('No game id ' + game));
         dao.load(id, function(err, artifact) {
             if (err) return callback(err);
-            if (!artifact) return callback(new errors.NotFound('Failed to load artifact ' + id));
+            if (!artifact) return callback(new app.errors.NotFound('Failed to load artifact ' + id));
             if (!artifact.game || !artifact.game.equals(game._id)) return callback(new Error('Artifact does not match game ' + artifact));
             return callback(null, artifact);
         });

@@ -12,17 +12,12 @@
 var utils = require('./utils');
 
 module.exports = function (app, config){
-    /**
-     * Module dependencies.
-     */
-    var service = new (require('../services/Players'))(app, config);
-    var dao = new (require('../dal/Dao'))(app, {'collectionName':'games'});
 
     /**
      * Find player by id
      */
     this.player = function(req, res, next, playerName) {
-        service.player(req.game, playerName, function (err, player) {
+        app.services.players.player(req.game, playerName, function (err, player) {
             if (err) return next(err);
             req.player = player;
             return next();
@@ -33,7 +28,7 @@ module.exports = function (app, config){
      * Create a player
      */
     this.create = function(req, res, next) {
-        service.create(req.game, req.body,function (err, player) {
+        app.services.players.create(req.game, req.body,function (err, player) {
             if (err) return next(err);
             res.statusCode = 201;
             res.jsonp(player);
@@ -44,7 +39,7 @@ module.exports = function (app, config){
      * Update a player
      */
     this.update = function(req, res, next) {
-        service.update(req.game, req.player, req.body, function (err, player) {
+        app.services.players.update(req.game, req.player, req.body, function (err, player) {
             if (err) return next(err);
             res.jsonp(player);
         });
@@ -54,7 +49,7 @@ module.exports = function (app, config){
      * Delete an game
      */
     this.destroy = function(req, res, next) {
-        service.destroy(req.game, req.player, function (err, player) {
+        app.services.players.destroy(req.game, req.player, function (err, player) {
             if (err) return next(err);
             res.jsonp(player);
         });
@@ -71,7 +66,7 @@ module.exports = function (app, config){
      * List of games
      */
     this.list = function(req, res, next) {
-        service.list(req.game, function (err, players) {
+        app.services.players.list(req.game, function (err, players) {
             if (err) return next(err);
             res.jsonp(players);
         });

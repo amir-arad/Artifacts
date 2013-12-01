@@ -10,7 +10,6 @@ module.exports = function (app, config){
     /**
      * Module dependencies.
      */
-    var errors = require('./errors');
     var _ = require('underscore');
 
     // define dao for asset files and metadatas
@@ -34,7 +33,7 @@ module.exports = function (app, config){
         app.logger.debug("query : " + query);
         dao.load(query, function(err, asset) {
             if (err) return callback(err);
-            if (!asset) return callback(new errors.NotFound('Failed to load asset ' + id));
+            if (!asset) return callback(new app.errors.NotFound('Failed to load asset ' + id));
             if (!asset.metadata.artifacts) return callback(new Error('Corrupted asset ' + asset));
             return callback( null, asset);
         });

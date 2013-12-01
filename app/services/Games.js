@@ -7,7 +7,6 @@
 
 var _ = require('underscore');
 var util = require('util');
-var errors = require('./errors');
 
 module.exports = function (app, config){
 
@@ -25,7 +24,7 @@ module.exports = function (app, config){
     this.game = function(id, callback) {
         dao.load(id, function(err, game) {
             if (err) return callback(err);
-            if (!game) return callback(new errors.NotFound('Failed to load game ' + id));
+            if (!game) return callback(new app.errors.NotFound('Failed to load game ' + id));
             return callback(null, game);
         });
     };

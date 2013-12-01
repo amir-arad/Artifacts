@@ -17,4 +17,9 @@ function NotFound(message){
     Error.captureStackTrace(this, arguments.callee);
 }
 util.inherits(NotFound, Error);
-module.exports.NotFound = NotFound;
+
+module.exports = function(app) {
+    app.errors = {
+        NotFound : NotFound
+    };
+};

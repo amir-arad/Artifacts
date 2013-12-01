@@ -2,9 +2,10 @@
  * Module dependencies.
  */
 var express = require('express');
-var fs = require('fs');
 var mongodb = require('mongodb');
 var passport = require('passport');
+var fs = require('fs');
+var _ = require('underscore');
 
 /**
  * Main application entry file.
@@ -12,55 +13,48 @@ var passport = require('passport');
  */
 var config = require('./config/config');
 
-// mongoose.connect(config.db);
-
-//Bootstrap models
-/*var models_path = __dirname + '/app/models';
-var walk = function(path) {
-    fs.readdirSync(path).forEach(function(file) {
-        var newPath = path + '/' + file;
-        var stat = fs.statSync(newPath);
-        if (stat.isFile()) {
-            if (/(.*)\.(js$|coffee$)/.test(file)) {
-                require(newPath);
-            }
-        } else if (stat.isDirectory()) {
-            walk(newPath);
-        }
-    });
-};
-walk(models_path);*/
-
-// TODO bootstrap passport config
-// require('./config/passport')(passport);
-
 var app = express();
 app.logger = require('./config/logger');
+var keypath = require("keypath");
 
 // first connect to DB
 require('./config/mongo')(app, config, function(err, db){
-    if(err){
-        throw err;
-    }
+    if(err) throw err;
     app.db = db;
     app.logger.info("DB is connected");
 
     //express settings
     require('./config/express')(app, config, passport, db);
 
-    //Bootstrap routes
-    require('./config/routes')(app, config, passport);
+    // errors
+    require('./config/errors')(app, config);
+    // load services from the app/services folder
+    app.services = {};
+    fs.readdir('./app/services', function (err, files) {
+        if(err) throw err;
+        _.each(files, function(fileName){
+            var service = require('./app/services/' + fileName);
+            var serviceName = fileName.split('.')[0].toLowerCase();
+            app.services[serviceName] = new service(app, config);
+            app.logger.info('loaded service ' + fileName);
+        });
 
-    if (config.bootstrapSampleGame){
-        //Bootstrap sample game
-        require('./sampleGame')(app, config);
-    }
+        // bootstrap routes
+        require('./config/routes')(app, config, passport);
 
-    //Start the app by listening on <port>
-    var port = process.env.PORT || config.port;
-    app.listen(port);
-    app.logger.info('Express app started on port ' + port);
+        if (config.bootstrapSampleGame){
+            // bootstrap sample game
+            require('./sampleGame')(app, config);
+        }
 
-    //expose app
-    exports = module.exports = app;
+        // start the app by listening on <port>
+        var port = process.env.PORT || config.port;
+        app.listen(port);
+
+        app.logger.info('Artifacts server started on port ' + port);
+
+        // expose app
+        exports = module.exports = app;
+
+    });
 });

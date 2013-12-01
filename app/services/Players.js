@@ -11,7 +11,6 @@
 
 var _ = require('underscore');
 var util = require('util');
-var errors = require('./errors');
 
 module.exports = function (app, config){
     /**
@@ -25,7 +24,7 @@ module.exports = function (app, config){
     this.player = function(game, playerName, callback) {
         if (!game) return new Error('Must specify game');
         var player = game.players[playerName];
-        if (!player) return callback(new errors.NotFound('Failed to load player ' + playerName));
+        if (!player) return callback(new app.errors.NotFound('Failed to load player ' + playerName));
         return callback(null, player);
     };
 
@@ -87,7 +86,9 @@ module.exports = function (app, config){
 
         // the deletion itself
         delete game.players[player.name];      // just in case
-        dao.updateFields(game, {('players.' + name) : '$unset'}, callback);
+        var fields = {};
+        fields['players.' + name] = '$unset';
+        dao.updateFields(game, fields, callback);
     };
 
     /**
