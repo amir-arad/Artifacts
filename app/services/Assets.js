@@ -5,14 +5,14 @@
  * Time: 8:29 PM
  */
 
-/**
- * Module dependencies.
- */
-var busboy = require('connect-busboy');
-var utils = require('./utils');
-
-
 module.exports = function (app, config){
+
+    /**
+     * Module dependencies.
+     */
+    var errors = require('./errors');
+    var _ = require('underscore');
+
     // define dao for asset files and metadatas
     var files = new (require('../dal/Files'))(app, {
         'collectionName': config.gridfs.bucket,
@@ -23,48 +23,20 @@ module.exports = function (app, config){
     /**
      * Find asset by id,
      */
-    this.asset = function(req, res, next, id) {
-        var game = req.game;
-        var artifact = req.artifact;
-        if (!game || !game._id) return next(new Error('No game id ' + game));
-        var query = {
-            '_id' : dao.id(id),
-            'metadata.game' : game._id
-        };
-        if (artifact && req.method !== 'PUT'){
-            // asset expected to be in an artifact
-            if (!artifact._id) return next(new Error('No artifact id ' + artifact));
+    this.asset = function(game, artifact, id, asFile, callback) {
+        if (!game || !game._id) return callback(new Error('No game id ' + game));
+        var query = asFile ? {'filename' : id} : dao.getSelectorById(id, true);
+        query['metadata.game'] = game._id;
+        if (artifact){
+            if (!artifact._id) return callback(new Error('No artifact id ' + artifact));
             query['metadata.artifacts'] = artifact._id;
         }
+        app.logger.debug("query : " + query);
         dao.load(query, function(err, asset) {
-            if (err) return next(err);
-            if (!asset) return next(new Error('Failed to load asset ' + id));
-            if (!asset.metadata.artifacts) return next(new Error('Corrupted asset ' + asset));
-            req.asset = asset;
-            return next();
-        });
-    };
-
-    /**
-     * Find asset by id,
-     * or if in artifact - by filename
-     */
-    this.assetAsFile = function(req, res, next, id) {
-        var game = req.game;
-        var artifact = req.artifact;
-        if (!game || !game._id) return next(new Error('No game id ' + game));
-        if (!artifact || !artifact._id) return next(new Error('No artifact id ' + artifact));
-        // Find asset by in artifact by filename
-        var query = {
-            'filename' : id,
-            'metadata.game' : game._id,
-            'metadata.artifacts' : artifact._id
-        };
-        dao.load(query, function(err, asset) {
-            if (err) return next(err);
-            if (!asset) return next(new Error('Failed to load asset ' + id));
-            req.asset = asset;
-            return next();
+            if (err) return callback(err);
+            if (!asset) return callback(new errors.NotFound('Failed to load asset ' + id));
+            if (!asset.metadata.artifacts) return callback(new Error('Corrupted asset ' + asset));
+            return callback( null, asset);
         });
     };
 
@@ -72,136 +44,68 @@ module.exports = function (app, config){
      * Create an asset
      * This means streaming up the content as files
      */
-    this.create = [busboy({limit : {fields : 0, files : 5, fileSize : config.gridfs.fileSizeLimit}}),        // use busboy middleware see https://github.com/mscdex/connect-busboy
-        function(req, res, next) {
-            var waitCounter = 1;            // the form itself is 1
-            var resVals = [];
-            var artifacts = [];
-            if (req.artifact) artifacts.push(req.artifact._id);
-
-            req.busboy.on('file', function(fieldname, stream, filename, encoding, contentType) {
-                if (typeof filename === 'undefined') {
-                    // submitted file field with no file in it.
-                    // consume stream so busboy will finish
-                    stream.on('readable', stream.read);
-                } else {
-                    waitCounter++;                   // each file adds 1
-                    app.logger.debug("file : " + filename);
-                    var fileOptions = {
-                        'filename' : filename,
-                        'content_type' : contentType,
-                        'metadata' : {
-                            'game' : req.game._id,
-                            'artifacts' : artifacts
-                        }
-                    };
-                    files.insert(stream, fileOptions, function(err, file){
-                        if (err) return next(err);
-                        app.logger.info("asset created " + file);
-                        // settings
-                        resVals.push(file);
-                        endOfFileWriteOrFormInput();
-                    });
-                }
-            });
-            // at the end of the last file write, or the form's input, send resVals to the client
-            function endOfFileWriteOrFormInput() {
-                waitCounter--;
-                // wait until all files are finished
-                if (waitCounter == 0) {
-                    if(res.finished) return;
-                    res.statusCode = 201;
-                    res.jsonp(resVals);
-                }
+    this.create = function(game, artifacts, filename, contentType, stream, callback) {
+        if (!game || !game._id) return callback(new Error('No game id ' + game));
+        if (!filename) return callback(new Error('No filename'));
+        if (!contentType) return callback(new Error('No contentType'));
+        if (!artifacts) return callback(new Error('No artifacts'));
+        if (!stream) return callback(new Error('No stream'));
+        var fileOptions = {
+            'filename' : filename,
+            'content_type' : contentType,
+            'metadata' : {
+                'game' : game._id,
+                'artifacts' : artifacts
             }
-
-            req.busboy.on('end', endOfFileWriteOrFormInput);
-            app.logger.debug("connecting request to busboy");
-            req.pipe(req.busboy);
-        }];
-
-
-    function parseItems(raw) {
-        return raw ? raw.split(' ') : [];
-    }
-
-    function arrayRemove(array, val) {
-        return array.filter(function (e) {
-            return ! val.equals(e);
+        };
+        files.insert(stream, fileOptions, function(err, file) {
+            if (err) return callback(err);
+            if (!file) return callback(new Error('Failed to create asset ' + filename));
+            return callback( null, file);
         });
     }
 
-    /**
-     * Update an assets
-     */
-    this.update = function(req, res, next) {
-        var asset = req.asset;
-        var game = req.game;
-        var artifact = req.artifact;
-        if (!game || !game._id) return next(new Error('No game id ' + game));
-        if (!asset || !asset._id) return next(new Error('No asset id ' + asset));
-        if (artifact){
-            if (!artifact._id) return next(new Error('No artifact id ' + artifact));
-            switch (req.method) {
-                case 'DELETE':
-                    asset.metadata.artifacts = arrayRemove(asset.metadata.artifacts, artifact._id);
-                    break;
-                case 'PUT':
-                    asset.metadata.artifacts = arrayRemove(asset.metadata.artifacts, artifact._id);
-                    asset.metadata.artifacts.push(artifact._id);
-                    break;
-                default :
-                    return next(new Error('Unknown method for artifact update operation : ' + req.method));
-                    break;
-            }
-        } else {
-            asset = utils.updateCopyExcept(asset, req.body, ['_id', 'artifacts']);
-            asset.game = game._id;
-            asset.metadata.artifacts = parseItems(req.body.artifacts);
-        }
-        dao.update(asset, function(err) {
-            if (err) return next(err);
-            res.jsonp(asset);
-        });
+    this.changeArtifact = function(asset, artifact, add, callback){
+        if (!asset || !asset._id) return callback(new Error('No asset id ' + asset));
+        if (!artifact || !artifact._id) return callback(new Error('No artifact id ' + artifact));
+        var operation = add ? '$push' : '$pull';
+        dao.updateFields({'_id': asset._id, 'metadata.artifacts': artifact._id}, {'metadata.artifacts' : operation}, callback);
+    };
+
+    this.update = function(asset, newFields, callback){
+        if (!asset || !asset._id) return callback(new Error('No asset id ' + asset));
+        newFields = _.clone(newFields);
+        newFields._id = asset._id;
+        // does not allow edit of content-bound fields (like length, md5 etc)
+        dao.updateFields(newFields, ['filename', 'contentType', 'aliases', 'metadata.artifacts'], callback);
+
     };
 
     /**
-     * Delete an assets
+     * Delete an asset
      */
-    this.destroy = function(req, res, next) {
-        var asset = req.asset;
-        files.remove(asset, function(err) {
-            if (err) return next(err);
-            res.jsonp(asset);
-        });
+    this.destroy = function(asset, callback) {
+        if (!asset || !asset._id) return callback(new Error('No asset id ' + asset));
+        files.remove(asset, callback);
     };
 
     /**
      * Show an asset
      */
-    this.show = function(req, res, next) {
-        var asset = req.asset;
-        res.setHeader("Content-Type", asset.contentType);
-        res.setHeader("Content-Length", asset.length);
-        res.setHeader("Content-MD5", asset.md5);
-        files.load(req.asset, res, function(err){
-            if (err) return next(err);
-            if(!res.finished) return next(err);
-        });
+    this.readContent = function(asset, stream, callback) {
+        if (!asset || !asset._id) return callback(new Error('No asset id ' + asset));
+        if (!stream || stream.finished) return callback(new Error('No readable stream'));
+        files.load(asset, stream, callback);
     };
+
     /**
      * List of assets
      * may be filtered by game or artifact if present in the request context
      */
-    this.list = function(req, res, next) {
-        var game = req.game;
-        var artifact = req.artifact;
-        var query = {};
-        if (game) query['metadata.game'] = game._id;
+    this.list = function(game, artifact, callback) {
+        if (!game || !game._id) return callback(new Error('No game id ' + game));
+        var query = {'metadata.game' : game._id};
         if (artifact) query['metadata.artifacts'] = artifact._id;
-        dao.list(query, function(err, assets) {
-            if (err) return next(err);
-            res.jsonp(assets);
-        });
+        dao.list(query, callback);
     };
 };

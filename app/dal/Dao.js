@@ -22,6 +22,10 @@ module.exports = function (app, options){
 
     this.id = utils.id;
 
+    this.getSelectorById = function(id, wrapWithObj) {
+        return utils.getSelectorById(options, id, wrapWithObj);
+    }
+
     // functionality will be added to the dao only after there is a collection
     app.db.collection(options.collectionName, function(err, collection) {
         if (err) throw err;
@@ -78,7 +82,7 @@ module.exports = function (app, options){
             var query = utils.getSelectorById(options, entity[options.id]);
             var sort = [['_id', 'asc']];
             app.logger.debug("update : " + JSON.stringify(update));
-            collection.findAndModify(query, sort, update, {'safe':true, 'new':true}, callback);
+            collection.update(query, sort, update, {'safe':true, 'new':true}, callback);
         };
 
         /**

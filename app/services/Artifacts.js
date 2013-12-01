@@ -7,6 +7,7 @@
 
 var _ = require('underscore');
 var util = require('util');
+var errors = require('./errors');
 
 module.exports = function (app, config){
     /**
@@ -24,7 +25,7 @@ module.exports = function (app, config){
         if (!game || !game._id) return callback(new Error('No game id ' + game));
         dao.load(id, function(err, artifact) {
             if (err) return callback(err);
-            if (!artifact) return callback(new Error('Failed to load artifact ' + id));
+            if (!artifact) return callback(new errors.NotFound('Failed to load artifact ' + id));
             if (!artifact.game || !artifact.game.equals(game._id)) return callback(new Error('Artifact does not match game ' + artifact));
             return callback(null, artifact);
         });
@@ -40,6 +41,7 @@ module.exports = function (app, config){
      * Create an artifact
      */
     this.create = function(game, artifact, callback) {
+        if (!game || !game._id) return callback(new Error('No game id ' + game));
         artifact.game = game._id;
         artifact.assets = [];
         // validation
@@ -52,6 +54,7 @@ module.exports = function (app, config){
      * Update an artifact
      */
     this.update = function(artifact, newFields, callback) {
+        if (!artifact || !artifact._id) return callback(new Error('No artifact id ' + artifact));
         newFields = _.clone(newFields);
         newFields._id = artifact._id;
 
@@ -64,6 +67,7 @@ module.exports = function (app, config){
      * Delete an artifact
      */
     this.destroy = function(artifact, callback) {
+        if (!artifact || !artifact._id) return callback(new Error('No artifact id ' + artifact));
         dao.remove(artifact, callback);
     };
 
@@ -71,6 +75,7 @@ module.exports = function (app, config){
      * List of artifacts in a game
      */
     this.listByGame = function(game, callback) {
+        if (!game || !game._id) return callback(new Error('No game id ' + game));
         dao.list({'game' : game._id}, callback);
     };
 
@@ -78,6 +83,8 @@ module.exports = function (app, config){
      * List of artifacts owned by a player
      */
     this.listByPlayer = function(game, player, callback) {
+        if (!game || !game._id) return callback(new Error('No game id ' + game));
+        if (!player || !player.name) return callback(new Error('No player name ' + game));
         dao.list({'game' : game._id, 'location' : player.name}, callback);
     };
 };

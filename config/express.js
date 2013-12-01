@@ -76,23 +76,29 @@ module.exports = function(app, config, passport, db) {
         //routes should be at the last
         app.use(app.router);
 
-        //Assume "not found" in the error msgs is a 404. this is somewhat silly, but valid, you can do whatever you like, set properties, use instanceof etc.
         app.use(function(err, req, res, next) {
-            //Treat as 404
-            if (~err.message.indexOf('not found')) return next();
+            if (err.name.indexOf('not found')){
+                //Log it
+                console.error(err.stack);
 
-            //Log it
-            console.error(err.stack);
-
-            //Error page
-            res.status(500).render('500', {
-                error: err.stack
-            });
+                // TODO change jsonp to render ?
+                //Error page
+                res.status(500).jsonp('500', {
+                    error: err.message
+                });
+            } else {
+                // TODO change jsonp to render ?
+                res.status(404).jsonp('404', {
+                    url: req.originalUrl,
+                    error: err.message
+                });
+            }
         });
 
         //Assume 404 since no middleware responded
         app.use(function(req, res, next) {
-            res.status(404).render('404', {
+            // TODO change jsonp to render ?
+            res.status(404).jsonp('404', {
                 url: req.originalUrl,
                 error: 'Not found'
             });

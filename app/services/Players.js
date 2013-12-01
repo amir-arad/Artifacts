@@ -9,28 +9,29 @@
  * Time: 3:27 PM
  */
 
+var _ = require('underscore');
+var util = require('util');
+var errors = require('./errors');
 
 module.exports = function (app, config){
     /**
      * Module dependencies.
      */
-    var _ = require('underscore'),
-    // define dao for **games**
-        dao = new (require('../dal/Dao'))(app, {'collectionName':'games'});
+    var dao = new (require('../dal/Dao'))(app, {'collectionName':'games'});
 
     /**
      * Find player by id
      */
-    this.player = function(req, res, next, id) {
-        var player = req.game.players[id];
-        if (!player) return next(new Error('Failed to load player ' + id));
-        req.player = player;
-        return next();
+    this.player = function(game, playerName, callback) {
+        if (!game) return new Error('Must specify game');
+        var player = game.players[playerName];
+        if (!player) return callback(new errors.NotFound('Failed to load player ' + playerName));
+        return callback(null, player);
     };
 
     function validateGameAndName(game, player){
-        if (!game) return new Error('Must specify game');
-        if (!player.name) return new Error('Must specify player name ' + player);
+        if (!game || !game._id) return new Error('Must specify game id');
+        if (!player || !player.name) return new Error('Must specify player name');
         return null;
     }
 
@@ -44,65 +45,57 @@ module.exports = function (app, config){
     /**
      * Create a player
      */
-    this.create = function(req, res, next) {
-        var player = req.body;
-        var game = req.game;
+    this.create = function(game, player, callback) {
         var err;
-
         // validation
-        if (err = validateGameAndName(game, player)) return next(err);
-        if (game.players[player.name]) return next(new Error('Player name already exists ' + player.name));
+        if (err = validateGameAndName(game, player)) return callback(err);
+        if (game.players[player.name]) return callback(new Error('Player name already exists ' + player.name));
 
         // the creation itself
         game.players[player.name] = player;
-        res.statusCode = 201;
-        updateGameReturnPlayer(game, next, res, player);
+        dao.updateFields(game, getPlayerFields(player.name), callback);
     };
+
+    function getPlayerFields(name) {
+        return ['players.' + name + '.name',
+            'players.' + name + '.password',
+            'players.' + name + '.description'];
+    }
 
     /**
      * Update a player
      */
-    this.update = function(req, res, next) {
-        var player = utils.updateCopyExcept(req.player, req.body, 'name');
-        var game = req.game;
+    this.update = function(game, player, newFields, callback) {
         var err;
-
         // validation
         if (err = validateGameAndName(game, player)) return next(err);
+        newFields = _.clone(newFields);
+        newFields.name = player.name;
 
         // the creation itself
-        game.players[player.name] = player;
-        updateGameReturnPlayer(game, next, res, player);
+        game.players[player.name] = newFields;
+        dao.updateFields(game, getPlayerFields(player.name), callback);
     };
 
     /**
      * Delete an game
      */
-    this.destroy = function(req, res, next) {
-        var player = req.player;
-        var game = req.game;
+    this.destroy = function(game, player, callback) {
         var err;
-
         // validation
-        if (err = validateGameAndName(game, player)) return next(err);
+        if (err = validateGameAndName(game, player)) return callback(err);
 
-        // the creation itself
-        delete game.players[player.name];
-        updateGameReturnPlayer(game, next, res, player);
-    };
-
-    /**
-     * Show an game
-     */
-    this.show = function(req, res) {
-        res.jsonp(req.player);
+        // the deletion itself
+        delete game.players[player.name];      // just in case
+        dao.updateFields(game, {('players.' + name) : '$unset'}, callback);
     };
 
     /**
      * List of games
      */
-    this.list = function(req, res, next) {
-        res.jsonp(req.game.players);
+    this.list = function(game, callback) {
+        if (!game || !game.players) return callback(new Error('Corrupted game'));
+        return callback(null, _.values(game.players));
     };
 };
 

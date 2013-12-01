@@ -90,28 +90,25 @@ module.exports.getUpdate = function getUpdate(entity, fields) {
     for (var path in fields) {
         if (fields[path] && fields.hasOwnProperty(path)) {
             var value = keypath(path, entity);
-            if (value === undefined) {
-                if (fields[path] === '$unset'){
-                    addFieldToUpdate(result, '$unset', path, "");
-                }
-            } else {
-                switch(fields[path]){
-                    case '$addAllToSet' :
-                        if (isArray(value))
-                            throw new Error('$addAllToSet called on field : ' +
-                                path + ' containing ' + (typeof value) + ' : ' + value);
-                        addFieldToUpdate(result, '$addToSet', path, {'$each' : value});
-                        break;
-                    case '$pushAll' :
-                        if (isArray(value))
-                            throw new Error('$pushAll called on field : ' +
-                                path + ' containing ' + (typeof value)+ ' : '  + value);
-                        addFieldToUpdate(result, '$push', path, {'$each' : value});
-                        break;
-                    default :
-                        // assuming the value of fields is a valid mongo method
-                        addFieldToUpdate(result, fields[path], path, value);
-                }
+            switch(fields[path]){
+                case '$addAllToSet' :
+                    if (!isArray(value))
+                        throw new Error('$addAllToSet called on field : ' +
+                            path + ' containing ' + (typeof value) + ' : ' + value);
+                    addFieldToUpdate(result, '$addToSet', path, {'$each' : value});
+                    break;
+                case '$pushAll' :
+                    if (!isArray(value))
+                        throw new Error('$pushAll called on field : ' +
+                            path + ' containing ' + (typeof value)+ ' : '  + value);
+                    addFieldToUpdate(result, '$push', path, {'$each' : value});
+                    break;
+                case '$unset' :
+                    addFieldToUpdate(result, '$unset', path, '');
+                    break;
+                default :
+                    // assuming the value of fields is a valid mongo method
+                    addFieldToUpdate(result, fields[path], path, value);
             }
         }
     }

@@ -79,7 +79,9 @@ module.exports = function (app, options){
                 gridFile.unlink(function(err, gridFile) {
                     if(err) return callback(err);
                     app.logger.debug("Deleted mongo gridFs file " + fileMetaData._id);
-                    gridFile.close(callback);
+                    gridFile.close(function(err){
+                        callback(err, err? null : fileMetaData);
+                    });
                 });
             });
     };
