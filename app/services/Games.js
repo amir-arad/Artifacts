@@ -58,7 +58,7 @@ module.exports = function (app, config){
     };
 
     /**
-     * Delete a game
+     * Delete a game and all its entities
      */
     this.destroy = function(game, callback) {
         if (!game || !game._id) return callback(new Error('No game ' + artifact));
@@ -71,7 +71,13 @@ module.exports = function (app, config){
                 // remove artifacts
                 async.each(artifacts, app.services.artifacts.destroy, cb);
             },
-            // TODO remove assets!
+            // get the game's assets
+            async.apply(app.services.assets.list, game, null),
+            function(assets, cb){
+                // remove assets
+                async.each(assets, app.services.assets.destroy, cb);
+            },
+            // return game to callback
             function(cb){cb(null, game);}
         ], callback);
     };
