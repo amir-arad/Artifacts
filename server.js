@@ -43,7 +43,7 @@ require('./config/mongo')(app, config, function(err, db){
         });
 
         // bootstrap routes
-        require('./config/routes')(app, config, passport);
+        require('./app/controllers/routes')(app, config, passport);
 
         function startServer(err){
             if(err) throw err;

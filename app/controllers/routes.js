@@ -2,11 +2,10 @@
  * will be attached explicitly to POST, PUT routes,
  * except for files upload routes which handle form parsing themselves
  */
-var formData = require('./formData');
- // TODO move to app/controllers folder
+var formData = require('../../config/formData');
 module.exports = function(app, config, passport) {
     // init the 3 authorization strategies  :admin, storyTeller, player
-    var auth = new (require('../app/authorization/Strategies'))(app, config, passport,
+    var auth = new (require('../authorization/Strategies'))(app, config, passport,
         function(req, res){           // fallback to auth error
             res.setHeader('WWW-Authenticate', 'Basic realm="Artifacts"');
             res.send(401, { "msg" : "error.no.credentials" });    // Unauthorized
@@ -22,7 +21,7 @@ module.exports = function(app, config, passport) {
     };
     app.post('/login', formData, auth.sysop.authenticate, silentOk);
 
-    var games = new (require('../app/controllers/Games'))(app, config);
+    var games = new (require('./Games'))(app, config);
     app.param('gameId', games.game);
     app.get('/games', formData, auth.sysop.authorize, games.list);
     app.post('/games', formData, auth.sysop.authorize, games.create);
@@ -33,7 +32,7 @@ module.exports = function(app, config, passport) {
     app.put('/games/:gameId', formData, auth.storyteller.authorize, games.update);
     app.del('/games/:gameId', auth.storyteller.authorize, games.destroy);
 
-    var players = new (require('../app/controllers/Players'))(app, config);
+    var players = new (require('./Players'))(app, config);
     app.param('playerId', players.player);
     app.get('/games/:gameId/players', auth.storyteller.authorize, players.list);
     app.post('/games/:gameId/players', formData, auth.storyteller.authorize, players.create);
@@ -44,7 +43,7 @@ module.exports = function(app, config, passport) {
 
     app.post('/games/:gameId/players/:playerId/login', formData, auth.player.authenticate, silentOk);
 
-    var artifacts =  new (require('../app/controllers/Artifacts'))(app, config);
+    var artifacts =  new (require('./Artifacts'))(app, config);
     app.param('artifactId', artifacts.artifact);
     app.get('/games/:gameId/artifacts', auth.storyteller.authorize, artifacts.listByGame);
     app.get('/games/:gameId/players/:playerId/artifacts', auth.player.authorize, artifacts.listByPlayer);
@@ -59,7 +58,7 @@ module.exports = function(app, config, passport) {
 
 
     // var multipart = new (require('../app/controllers/Multipart'))(app, config);
-    var assets = new (require('../app/controllers/Assets'))(app, config);
+    var assets = new (require('./Assets'))(app, config);
     app.param('assetId', assets.asset);
     app.get('/games/:gameId/assets', auth.storyteller.authorize, assets.list);
     app.get('/games/:gameId/assets/:assetId', auth.storyteller.authorize, assets.show);
