@@ -15,7 +15,10 @@ module.exports = function (app, config){
     // define dao for asset files and metadatas
     var files = new (require('../dal/Files'))(app, {
         'collectionName': config.gridfs.bucket,
-        'listFields': ['length', 'filename', 'contentType', 'uploadDate', 'metadata']
+        'listFields': ['length', 'filename', 'contentType', 'uploadDate', 'metadata'],
+        // compund index assets by game + multikey on artifact
+        // see http://docs.mongodb.org/manual/core/index-multikey/#interactions-between-compound-and-multikey-indexes
+        'index':['metadata.game', 'metadata.artifacts', 'filename']
     });
     var dao = files.getMetadataDao();
 

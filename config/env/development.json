@@ -6,7 +6,7 @@
     "cookie_secret" : "cookies are not food",
     "db" : "mongodb://127.0.0.1:27017/artifacts",
     "gridfs" : {
-        "initTest" : false,
+        "initTest" : true,
         "bucket" : "assets",
         "prefix" : "",
         "fileSizeLimit" : 17000000,

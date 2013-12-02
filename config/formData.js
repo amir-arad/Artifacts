@@ -14,7 +14,7 @@ var busboy = require('connect-busboy');
 /**
  * busboy initialized and if relevant, attaches to req
  */
-var setup = busboy({limit : {files : 0, fieldSize : 128}});
+var setup = busboy({limit : {files : 0, fieldSize : 512}});   // 512 bytes per field
 
 /**
  * all form fields will be attached to req.body just like in connect bodyParser

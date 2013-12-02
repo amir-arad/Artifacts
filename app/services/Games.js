@@ -16,7 +16,10 @@ module.exports = function (app, config){
      */
     var dao = new (require('../dal/Dao'))(app, {
         'collectionName':'games',
-        'listFields':['name', 'description']
+        'listFields':['name', 'description'],
+        // index games uniquely by name
+        'index':['name'],
+        'indexOptions':['unique']
     });
 
     /**

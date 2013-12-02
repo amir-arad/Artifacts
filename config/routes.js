@@ -3,7 +3,7 @@
  * except for files upload routes which handle form parsing themselves
  */
 var formData = require('./formData');
-
+ // TODO move to app/controllers folder
 module.exports = function(app, config, passport) {
     // init the 3 authorization strategies  :admin, storyTeller, player
     var auth = new (require('../app/authorization/Strategies'))(app, config, passport,

@@ -14,7 +14,9 @@ module.exports = function (app, config){
      */
     var dao = new (require('../dal/Dao'))(app, {
         'collectionName':'artifacts',
-        'listFields':['name', 'description', 'location']
+        'listFields':['name', 'player', 'location'],
+        // index by game + location (the most common query in the system)
+        'index':{'game' : 1, 'player': 1, 'location' : '2dsphere'}
     });
 
     /**
@@ -30,9 +32,14 @@ module.exports = function (app, config){
         });
     };
 
-    function validateGameAndLocation(game, artifact){
-        if (!artifact.location) return new Error('Must specify artifact location ' + artifact);
-        if (typeof artifact.location === 'string' && !game.players[artifact.location]) return new Error('Illegal location ' + artifact.location);
+    function validatePlayerOrLocation(game, artifact){
+        if (artifact.player) {
+            delete artifact.location;
+            if (!game.players[artifact.player]) return new Error('Illegal player ' + artifact.player);
+        } else {
+            delete artifact.player;
+            if (!artifact.location) return new Error('No player nor location ' + artifact);
+        }
         return null;
     }
 
@@ -45,7 +52,7 @@ module.exports = function (app, config){
         artifact.assets = [];
         // validation
         var err;
-        if (err = validateGameAndLocation(game, artifact)) return callback(err);
+        if (err = validatePlayerOrLocation(game, artifact)) return callback(err);
         dao.insert(artifact, callback);
     };
 
@@ -53,13 +60,19 @@ module.exports = function (app, config){
      * Update an artifact
      */
     this.update = function(artifact, newFields, callback) {
-        if (!artifact || !artifact._id) return callback(new Error('No artifact id ' + artifact));
+        if (!artifact || !artifact._id || !artifact.game) return callback(new Error('Corrupt artifact ' + artifact));
         newFields = _.clone(newFields);
         newFields._id = artifact._id;
+        newFields.game = artifact.game;
 
-        // TODO BL to validate location
+        // validation
+        app.services.games.game(artifact.game.toHexString(), function(err, game){
+            var err;
+            if (err = validatePlayerOrLocation(game, artifact)) return callback(err);
+            // TODO BL to validate location
 
-        dao.updateFields(newFields, ['name', 'location', 'description'], callback);
+            dao.updateFields(newFields, ['name', 'location', 'description'], callback);
+        });
     };
 
     /**
@@ -84,6 +97,6 @@ module.exports = function (app, config){
     this.listByPlayer = function(game, player, callback) {
         if (!game || !game._id) return callback(new Error('No game id ' + game));
         if (!player || !player.name) return callback(new Error('No player name ' + game));
-        dao.list({'game' : game._id, 'location' : player.name}, callback);
+        dao.list({'game' : game._id, 'player' : player.name}, callback);
     };
 };

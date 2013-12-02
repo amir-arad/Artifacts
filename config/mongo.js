@@ -16,14 +16,14 @@ module.exports = function(app, config, callback) {
             db.close();
         });
         if (config.gridfs.initTest){
-            testFiles(db, config, callback, app);
+            return testFiles(app, db, config, callback);
         } else {
             return callback(null, db);
         }
     });
 }
 
-function testFiles(db, config, callback, app) {
+function testFiles(app, db, config, callback) {
     app.logger.info("testing write-read-delete operations on gridFS");
     var grid = new mongodb.Grid(db, config.gridfs.bucket);
     var buffer = new Buffer("Test buffer");

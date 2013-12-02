@@ -11,18 +11,22 @@ var keypath = require("keypath");
  * turn array into object with 'true' values
  */
 function formatListFields(listFields) {
+    var formatted = {};
     if (isArray(listFields)) {
         // format list fields from array to projection object
-        var formatted = {};
         for (var i = 0; i < listFields.length; ++i) {
             formatted[listFields[i]] = true;
         }
         return formatted;
+    } else if (!listFields){
+        listFields = formatted;
     }
     return listFields;
 }
 
-/**
+module.exports.formatListFields = formatListFields;
+
+    /**
  * format update argument
  */
 function formatUpdateFields(updateFields) {

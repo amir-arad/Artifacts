@@ -32,6 +32,14 @@ module.exports = function (app, options){
 
         _this.collection = collection;
 
+        if (options.index){
+            options.index = utils.formatListFields(options.index);
+            options.indexOptions = utils.formatListFields(options.indexOptions);
+            options.indexOptions.background = true;
+            options.indexOptions.dropDups = options.indexOptions.unique;
+            collection.ensureIndex(options.index, options.indexOptions, function(err){if (err) throw err;});
+        }
+
         var list = utils.getListFunction(options.listFields, collection);
 
         /**
@@ -67,7 +75,9 @@ module.exports = function (app, options){
 
         /**
          * Update an entity
+         * @deprecated  use only updateFields
          */
+        // TODO delete
         _this.update = function(entity, callback){
             var query = utils.getSelectorById(options, entity[options.id]);
             collection.update(query, entity, {'safe':true}, callback);
