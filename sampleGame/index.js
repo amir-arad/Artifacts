@@ -7,27 +7,28 @@
 
 var async = require('async');
 var _ = require('underscore');
+var fs = require('fs');
 
 var sampleGame = {
     name : 'sampleGame',
     password : '1234',
     description : 'a sample game created automatically',
-    players : [
-        {name : 'alice', password : 'wonderland', description : 'alice is a quiet player'},
-        {name : 'bob', password : 'king123', description : 'bob always wins'},
-        {name : 'zander', password : 'l33t!', description : 'zander is a new guy'},
-    ],
-    artifacts : [
-        {name : 'rock', description : 'a rock', player : 'alice', assets : []},
-        {name : 'paper', description : 'a piece of paper', player : 'bob', assets : []},
-        {name : 'cissors', description : 'a pair of cissors', player : 'zander', assets : []},
-        {name : 'magnet', description : 'a magnet', player : 'zander', assets : []}
-    ]
+    players : {
+        alice : {name : 'alice', password : 'wonderland', description : 'alice is a quiet player'},
+        bob : {name : 'bob', password : 'king123', description : 'bob always wins'},
+        zander : {name : 'zander', password : 'l33t!', description : 'zander is a new guy'},
+    },
+    artifacts : {
+        rock : {name : 'rock', description : 'a rock', player : 'alice', assets : []},
+        paper : {name : 'paper', description : 'a piece of paper', player : 'bob', assets : []},
+        scissors : {name : 'scissors', description : 'a pair of cissors', player : 'zander', assets : []},
+        magnet : {name : 'magnet', description : 'a magnet', player : 'zander', assets : []}
+    }
 };
 
-var sampleGameName = 'sampleGame';
-var sampleGamePassword = '1234';
-var sampleGameDescription = 'a sample game created automatically';
+function endsWith(suffix, str) {
+    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+}
 
 module.exports = function(app, config, callback) {
     // check if sample game exists
@@ -56,22 +57,55 @@ module.exports = function(app, config, callback) {
             // add players
             function(game, cb){
                 async.each(
-                    sampleGame.players,
+                    _.values(sampleGame.players),
                     async.apply(app.services.players.create, game),
                     function(err){
                         cb(err, err? null : game);
                     });
             },
+            // upload assets
+            function(game, cb){
+                fs.readdir( __dirname, function (err, files) {
+                    async.each(
+                        _.filter(files, async.apply(endsWith, '.jpg')),
+                        function(filename, cb){
+                            // insert file as artifact
+                            var readStream = fs.createReadStream(__dirname + '/' + filename);
+                            app.services.assets.create(game, [], filename, 'image/jpeg', readStream,
+                                // add asset to artifact model
+                                function(err, asset){
+                                    if (err) return cb(err);
+                                    var fileLocalPart = filename.split('.', 1)[0];
+                                    sampleGame.artifacts[ fileLocalPart].assets.push(asset);
+                                    cb();
+                                });
+                        },
+                        function(err){
+                            cb(err, err? null : game);
+                        });
+                });
+            },
             // add artifacts
             function(game, cb){
                 async.each(
-                    sampleGame.artifacts,
-                    async.apply(app.services.artifacts.create, game),
+                    _.values(sampleGame.artifacts),
+                    function(artifact, cb){
+                        app.services.artifacts.create(game, artifact,
+                            function(err, artifact){
+                                if (err) return cb(err);
+                                // add assets by artifact model
+                                async.each(
+                                    sampleGame.artifacts[artifact.name].assets,
+                                    function(asset, cb){
+                                        app.services.assets.changeArtifact(asset, artifact, true, cb);
+                                    },
+                                    cb);
+                            });
+                    },
                     function(err){
                         cb(err, err? null : game);
                     });
             }
-            // TODO add assets
-            ], callback);
+        ], callback);
     }
 }

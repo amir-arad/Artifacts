@@ -71,7 +71,7 @@ module.exports = function (app, config){
         if (!asset || !asset._id) return callback(new Error('No asset id ' + asset));
         if (!artifact || !artifact._id) return callback(new Error('No artifact id ' + artifact));
         var operation = add ? '$push' : '$pull';
-        dao.updateFields({'_id': asset._id, 'metadata.artifacts': artifact._id}, {'metadata.artifacts' : operation}, callback);
+        dao.updateFields({'_id': asset._id, 'metadata' : {'artifacts': artifact._id}}, {'metadata.artifacts' : operation}, callback);
     };
 
     this.update = function(asset, newFields, callback){

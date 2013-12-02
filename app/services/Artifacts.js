@@ -48,8 +48,8 @@ module.exports = function (app, config){
      */
     this.create = function(game, artifact, callback) {
         if (!game || !game._id) return callback(new Error('No game id ' + game));
+        artifact = _.pick(artifact, ['name', 'location', 'description', 'player']);
         artifact.game = game._id;
-        artifact.assets = [];
         // validation
         var err;
         if (err = validatePlayerOrLocation(game, artifact)) return callback(err);
@@ -71,7 +71,7 @@ module.exports = function (app, config){
             if (err = validatePlayerOrLocation(game, artifact)) return callback(err);
             // TODO BL to validate location
 
-            dao.updateFields(newFields, ['name', 'location', 'description'], callback);
+            dao.updateFields(newFields, ['name', 'location', 'description', 'player'], callback);
         });
     };
 
