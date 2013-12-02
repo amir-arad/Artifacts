@@ -19,16 +19,19 @@ module.exports = function (app, config){
         'index':{'game' : 1, 'player': 1, 'location' : '2dsphere'}
     });
     var attributes = ['name', 'location', 'description', 'player', 'defaultFileName'];
+    var mutableAttributes = _.without(attributes, 'name');
 
+    function id(game, name){
+        return game._id.toHexString() + '-' + name.toLowerCase();
+    }
     /**
-     * Find artifact by id
+     * Find artifact by name
      */
-    this.artifact = function(game, id, callback) {
-        if (!game || !game._id) return callback(new Error('No game id ' + game));
-        dao.load(id, function(err, artifact) {
+    this.artifact = function(game, name, callback) {
+        if (!game || !game._id) return callback(new Error('No game name ' + game));
+        dao.load({_id : id(game, name)}, function(err, artifact) {
             if (err) return callback(err);
-            if (!artifact) return callback(new app.errors.NotFound('Failed to load artifact ' + id));
-            if (!artifact.game || !artifact.game.equals(game._id)) return callback(new Error('Artifact does not match game ' + artifact));
+            if (!artifact) return callback(new app.errors.NotFound('Failed to load artifact ' + name));
             return callback(null, artifact);
         });
     };
@@ -49,8 +52,10 @@ module.exports = function (app, config){
      */
     this.create = function(game, artifact, callback) {
         if (!game || !game._id) return callback(new Error('No game id ' + game));
+        if (!artifact || !artifact.name) return callback(new Error('No artifact name ' + artifact));
         artifact = _.pick(artifact, attributes);
         artifact.game = game._id;
+        artifact._id = id(game, artifact.name);
         // validation
         var err;
         if (err = validatePlayerOrLocation(game, artifact)) return callback(err);
@@ -62,17 +67,16 @@ module.exports = function (app, config){
      */
     this.update = function(artifact, newFields, callback) {
         if (!artifact || !artifact._id || !artifact.game) return callback(new Error('Corrupt artifact ' + artifact));
-        newFields = _.clone(newFields);
-        newFields._id = artifact._id;
-        newFields.game = artifact.game;
+        newFields = _.defaults(_.pick(newFields, mutableAttributes), artifact);
 
+        // TODO deletes all fields except for ID!!!!
         // validation
-        app.services.games.game(artifact.game.toHexString(), function(err, game){
-            var err;
-            if (err = validatePlayerOrLocation(game, artifact)) return callback(err);
+        app.services.games.game(newFields.game, function(err, game){
+            if (err) return callback(err);
+            if (err = validatePlayerOrLocation(game, newFields)) return callback(err);
             // TODO BL to validate location
 
-            dao.updateFields(newFields, attributes, callback);
+            dao.updateFields(newFields, mutableAttributes, callback);
         });
     };
 

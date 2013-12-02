@@ -37,7 +37,8 @@
         "grunt-cli": "latest",
         "grunt-env": "latest",
         "pause-stream": "latest",
-        "connect-busboy" : "latest"
+        "connect-busboy" : "latest",
+        "connect-timeout" : "latest"
     },
     "devDependencies": {
         "supertest": "latest",
@@ -46,6 +47,6 @@
         "grunt-contrib-jshint": "latest",
         "grunt-nodemon": "latest",
         "grunt-concurrent": "latest",
-        "grunt-mocha-test": "latest"
+        "grunt-mocha-test": "0.8.0"
     }
 }

@@ -25,7 +25,7 @@ module.exports = function (app, config){
     /**
      * Find asset by id,
      */
-    this.asset = function(game, artifact, id, asFile, callback) {
+    function loadAssetByFileOrId(game, artifact, id, asFile, callback) {
         if (!game || !game._id) return callback(new Error('No game id ' + game));
         var query = asFile ? {'filename' : id} : dao.getSelectorById(id, true);
         query['metadata.game'] = game._id;
@@ -37,10 +37,10 @@ module.exports = function (app, config){
         dao.load(query, function(err, asset) {
             if (err) return callback(err);
             if (!asset) return callback(new app.errors.NotFound('Failed to load asset ' + id));
-            if (!asset.metadata.artifacts) return callback(new Error('Corrupted asset ' + asset));
             return callback( null, asset);
         });
     };
+    this.asset = loadAssetByFileOrId;
 
     /**
      * Create an asset

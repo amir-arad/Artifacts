@@ -5,8 +5,9 @@
  * Time: 12:06 AM
  */
 
+var _ = require('underscore');
 var utils = require('./utils');
-
+var ObjectId = require("mongodb").ObjectID;
 /**
  * Options
  *  - **collectionName**, {String} the name of the collection this dao addresses
@@ -58,7 +59,11 @@ module.exports = function (app, options){
          */
         _this.load = function(query, callback){
             if (typeof query === 'object'){
-                collection.findOne(query, callback);
+                if (query instanceof ObjectId){
+                    collection.findOne(utils.getSelectorById(options, query, false),callback);
+                } else {
+                    collection.findOne(query, callback);
+                }
             } else {
                 collection.findOne(utils.getSelectorById(options, query, true),callback);
             }
@@ -89,6 +94,7 @@ module.exports = function (app, options){
         _this.updateFields = function(entity, fields, callback){
             utils.removeField(fields, options.id);   // safety
             var update = utils.getUpdate(entity, fields);
+            if (!_.size(update)) return callback(new Error('update called with no updatable fields'));
             var query = utils.getSelectorById(options, entity[options.id]);
             var sort = [['_id', 'asc']];
             app.logger.debug("findAndModify : " + JSON.stringify(update));

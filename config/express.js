@@ -7,6 +7,8 @@ var express = require('express'),
     helpers = require('view-helpers'),
     config = require('./config');
 
+var connectTimeout = require('connect-timeout');
+
 module.exports = function(app, config, passport, db) {
     app.set('showStackError', true);
 
@@ -45,6 +47,9 @@ module.exports = function(app, config, passport, db) {
     app.use(express.json())
     app.use(express.urlencoded());
     app.use(express.methodOverride());
+
+    // http://stackoverflow.com/questions/14408573/need-to-reduce-the-timeout-period-for-a-route-in-expressjs
+    app.use(connectTimeout({ time: 10000 }));
 
     //express/mongo session storage
     app.use(express.session({

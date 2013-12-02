@@ -34,13 +34,12 @@ module.exports = function (app, config){
         return null;
     }
 
-    function updateGameReturnPlayer(game, next, res, player) {
-        dao.update(game, function (err) {
-            if (err) return next(err);
-            res.jsonp(player);
-        });
+    function wrapCallback(player, callback){
+        return function(err, game){
+            if (err) return callback(err);
+            return callback(null, (player.name && game.players[player.name]) || player);
+        };
     }
-
     /**
      * Create a player
      */
@@ -52,7 +51,7 @@ module.exports = function (app, config){
 
         // the creation itself
         game.players[player.name] = player;
-        dao.updateFields(game, getPlayerFields(player.name), callback);
+        dao.updateFields(game, getPlayerFields(player.name), wrapCallback(player, callback));
     };
 
     function getPlayerFields(name) {
@@ -73,7 +72,7 @@ module.exports = function (app, config){
 
         // the creation itself
         game.players[player.name] = newFields;
-        dao.updateFields(game, getPlayerFields(player.name), callback);
+        dao.updateFields(game, getPlayerFields(player.name), wrapCallback(player, callback));
     };
 
     /**
@@ -87,8 +86,8 @@ module.exports = function (app, config){
         // the deletion itself
         delete game.players[player.name];      // just in case
         var fields = {};
-        fields['players.' + name] = '$unset';
-        dao.updateFields(game, fields, callback);
+        fields['players.' + player.name] = '$unset';
+        dao.updateFields(game, fields, wrapCallback(player, callback));
     };
 
     /**

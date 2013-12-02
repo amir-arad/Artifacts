@@ -23,12 +23,13 @@ module.exports = function (app, config){
     });
 
     /**
-     * Find game by id
+     * Find game by name, query, or game entity
      */
-    this.game = function(id, callback) {
-        dao.load(id, function(err, game) {
+    this.game = function(query, callback) {
+        var query = (typeof query === 'string')? {name : query} : query;
+        dao.load(query, function(err, game) {
             if (err) return callback(err);
-            if (!game) return callback(new app.errors.NotFound('Failed to load game ' + id));
+            if (!game) return callback(new app.errors.NotFound('Failed to load game ' + query));
             return callback(null, game);
         });
     };

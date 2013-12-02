@@ -11,7 +11,6 @@ module.exports = function(app, config, passport) {
             res.send(401, { "msg" : "error.no.credentials" });    // Unauthorized
         });
 
-
     app.post('/logout', function(req, res, next){
         req.logout();
         res.send(204);         // OK, No Content
@@ -70,7 +69,7 @@ module.exports = function(app, config, passport) {
     app.get('/games/:gameId/artifacts/:artifactId/assets', auth.player.authorize, assets.list);
     // no formData, form handling in the controller :
     app.post('/games/:gameId/artifacts/:artifactId/assets', auth.storyteller.authorize, assets.create);
-    app.put('/games/:gameId/artifacts/:artifactId/assets/:assetId', formData, auth.storyteller.authorize, assets.changeArtifact);
+    app.put('/games/:gameId/artifacts/:artifactId/assets/:assetId', auth.storyteller.authorize, assets.changeArtifact);
     app.del('/games/:gameId/artifacts/:artifactId/assets/:assetId', auth.storyteller.authorize, assets.changeArtifact);
 
     // specific hack for nicely display of artifact to the user
