@@ -6,11 +6,11 @@
     "cookie_secret" : "cookies are not food",
     "db" : "mongodb://127.0.0.1:27017/artifacts",
     "gridfs" : {
-        "initTest" : true,
+        "initTest" : false,
         "bucket" : "assets",
         "prefix" : "",
         "fileSizeLimit" : 17000000,
         "contentTypeFilter" : "^image\/.*$"
     },
-    "bootstrapSampleGame" : "force"
+    "bootstrapSampleGame" : false
 }

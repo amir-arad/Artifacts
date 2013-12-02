@@ -19,10 +19,10 @@ var sampleGame = {
         zander : {name : 'zander', password : 'l33t!', description : 'zander is a new guy'},
     },
     artifacts : {
-        rock : {name : 'rock', description : 'a rock', player : 'alice', assets : []},
-        paper : {name : 'paper', description : 'a piece of paper', player : 'bob', assets : []},
-        scissors : {name : 'scissors', description : 'a pair of cissors', player : 'zander', assets : []},
-        magnet : {name : 'magnet', description : 'a magnet', player : 'zander', assets : []}
+        rock : {name : 'rock', description : 'a rock', player : 'alice', defaultFileName : 'rock.jpg', assets : []},
+        paper : {name : 'paper', description : 'a piece of paper', player : 'bob', defaultFileName : 'paper.jpg', assets : []},
+        scissors : {name : 'scissors', description : 'a pair of cissors', player : 'zander', defaultFileName : 'scissors.jpg', assets : []},
+        magnet : {name : 'magnet', description : 'a magnet', player : 'zander', defaultFileName : 'magnet.jpg', assets : []}
     }
 };
 
@@ -45,6 +45,27 @@ module.exports = function(app, config, callback) {
             return callback();
         }
     });
+
+    function uploadAssetsByType(files, game, type, contentType, cb) {
+        async.each(
+            _.filter(files, async.apply(endsWith, type)),
+            function (filename, cb) {
+                // insert file as artifact
+                var readStream = fs.createReadStream(__dirname + '/' + filename);
+                app.services.assets.create(game, [], filename, contentType, readStream,
+                    // add asset to artifact model
+                    function (err, asset) {
+                        if (err) return cb(err);
+                        var fileLocalPart = filename.split('.', 1)[0];
+                        sampleGame.artifacts[ fileLocalPart].assets.push(asset);
+                        cb();
+                    });
+            },
+            function (err) {
+                cb(err, err ? null : game);
+            });
+    }
+
     function initSampleGame(err){
         if (err) return callback(err);
         async.waterfall([
@@ -64,25 +85,10 @@ module.exports = function(app, config, callback) {
                     });
             },
             // upload assets
+            // TODO add html
             function(game, cb){
                 fs.readdir( __dirname, function (err, files) {
-                    async.each(
-                        _.filter(files, async.apply(endsWith, '.jpg')),
-                        function(filename, cb){
-                            // insert file as artifact
-                            var readStream = fs.createReadStream(__dirname + '/' + filename);
-                            app.services.assets.create(game, [], filename, 'image/jpeg', readStream,
-                                // add asset to artifact model
-                                function(err, asset){
-                                    if (err) return cb(err);
-                                    var fileLocalPart = filename.split('.', 1)[0];
-                                    sampleGame.artifacts[ fileLocalPart].assets.push(asset);
-                                    cb();
-                                });
-                        },
-                        function(err){
-                            cb(err, err? null : game);
-                        });
+                    uploadAssetsByType(files, game, '.jpg', 'image/jpeg', cb);
                 });
             },
             // add artifacts

@@ -8,8 +8,8 @@ var express = require('express'),
     config = require('./config');
 
 module.exports = function(app, config, passport, db) {
-    app.set('showStackError', true);    
-    
+    app.set('showStackError', true);
+
     //Prettify HTML
     app.locals.pretty = true;
 
@@ -37,72 +37,69 @@ module.exports = function(app, config, passport, db) {
     //Enable jsonp
     app.enable("jsonp callback");
 
-    // todo app.configure means nothing here
-    app.configure(function() {
-        //cookieParser should be above session
-        app.use(express.cookieParser());
+    //cookieParser should be above session
+    app.use(express.cookieParser());
 
-        //bodyParser should be above methodOverride
-        // app.use(express.bodyParser());  replaced bodyParser with urlencoded and json
-        app.use(express.json())
-        app.use(express.urlencoded());
-        app.use(express.methodOverride());
+    //bodyParser should be above methodOverride
+    // app.use(express.bodyParser());  replaced bodyParser with urlencoded and json
+    app.use(express.json())
+    app.use(express.urlencoded());
+    app.use(express.methodOverride());
 
-        //express/mongo session storage
-        app.use(express.session({
-            secret: config.cookie_secret,
-            store: new mongoStore({
-                db: db,
-                collection: 'sessions'
-            })
-        }));
+    //express/mongo session storage
+    app.use(express.session({
+        secret: config.cookie_secret,
+        store: new mongoStore({
+            db: db,
+            collection: 'sessions'
+        })
+    }));
 
-        //connect flash for flash messages
-        app.use(flash());
+    //connect flash for flash messages
+    app.use(flash());
 
-        //dynamic helpers
-        app.use(helpers(config.app.name));
+    //dynamic helpers
+    app.use(helpers(config.app.name));
 
-        //use passport session
-        app.use(passport.initialize());
-        app.use(passport.session());
-        passport.serializeUser(function(user, done) {
-            return done(null, JSON.stringify(user));
-        });
-        passport.deserializeUser(function(user, done) {
-            return done(null, JSON.parse(user));
-        });
+    //use passport session
+    app.use(passport.initialize());
+    app.use(passport.session());
+    passport.serializeUser(function(user, done) {
+        return done(null, JSON.stringify(user));
+    });
+    passport.deserializeUser(function(user, done) {
+        return done(null, JSON.parse(user));
+    });
 
-        //routes should be at the last
-        app.use(app.router);
+    //routes should be at the last
+    app.use(app.router);
 
-        app.use(function(err, req, res, next) {
-            if (err.name.indexOf('not found')){
-                //Log it
-                console.error(err.stack);
+    app.use(function(err, req, res, next) {
+        if (err.name.indexOf('not found')){
+            //Log it
+            console.error(err.stack);
 
-                // TODO change jsonp to render ?
-                //Error page
-                res.status(500).jsonp('500', {
-                    error: err.message
-                });
-            } else {
-                // TODO change jsonp to render ?
-                res.status(404).jsonp('404', {
-                    url: req.originalUrl,
-                    error: err.message
-                });
-            }
-        });
-
-        //Assume 404 since no middleware responded
-        app.use(function(req, res, next) {
+            // TODO change jsonp to render ?
+            //Error page
+            res.status(500).jsonp('500', {
+                error: err.message
+            });
+        } else {
             // TODO change jsonp to render ?
             res.status(404).jsonp('404', {
                 url: req.originalUrl,
-                error: 'Not found'
+                error: err.message
             });
-        });
-
+        }
     });
+
+    //Assume 404 since no middleware responded
+    app.use(function(req, res, next) {
+        // TODO change jsonp to render ?
+        res.status(404).jsonp('404', {
+            url: req.originalUrl,
+            error: 'Not found'
+        });
+    });
+
 };

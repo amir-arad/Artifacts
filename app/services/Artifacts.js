@@ -18,6 +18,7 @@ module.exports = function (app, config){
         // index by game + location (the most common query in the system)
         'index':{'game' : 1, 'player': 1, 'location' : '2dsphere'}
     });
+    var attributes = ['name', 'location', 'description', 'player', 'defaultFileName'];
 
     /**
      * Find artifact by id
@@ -48,7 +49,7 @@ module.exports = function (app, config){
      */
     this.create = function(game, artifact, callback) {
         if (!game || !game._id) return callback(new Error('No game id ' + game));
-        artifact = _.pick(artifact, ['name', 'location', 'description', 'player']);
+        artifact = _.pick(artifact, attributes);
         artifact.game = game._id;
         // validation
         var err;
@@ -71,7 +72,7 @@ module.exports = function (app, config){
             if (err = validatePlayerOrLocation(game, artifact)) return callback(err);
             // TODO BL to validate location
 
-            dao.updateFields(newFields, ['name', 'location', 'description', 'player'], callback);
+            dao.updateFields(newFields, attributes, callback);
         });
     };
 
