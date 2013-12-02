@@ -5,7 +5,7 @@
 var formData = require('../../config/formData');
 module.exports = function(app, config, passport) {
     // init the 3 authorization strategies  :admin, storyTeller, player
-    var auth = new (require('../authorization/Strategies'))(app, config, passport,
+    var auth = new (require('./authorization/Strategies'))(app, config, passport,
         function(req, res){           // fallback to auth error
             res.setHeader('WWW-Authenticate', 'Basic realm="Artifacts"');
             res.send(401, { "msg" : "error.no.credentials" });    // Unauthorized
