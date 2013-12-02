@@ -65,6 +65,9 @@ module.exports = function (app, config){
         async.waterfall([
             // remove the game first so no other artifacts can be added to it
             async.apply(dao.remove, game),
+            // theoretically here should be a players deletion logic
+            // but the DB model puts the players inside the game document so it's unnecesarry
+
             // get the game's artifacts
             app.services.artifacts.listByGame,
             function(artifacts, cb){
