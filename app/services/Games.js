@@ -7,6 +7,7 @@
 
 var _ = require('underscore');
 var util = require('util');
+var async = require('async');
 
 module.exports = function (app, config){
 
@@ -14,9 +15,9 @@ module.exports = function (app, config){
      * Module dependencies.
      */
     var dao = new (require('../dal/Dao'))(app, {
-            'collectionName':'games',
-            'listFields':['name', 'description']
-        });
+        'collectionName':'games',
+        'listFields':['name', 'description']
+    });
 
     /**
      * Find game by id
@@ -61,9 +62,18 @@ module.exports = function (app, config){
      */
     this.destroy = function(game, callback) {
         if (!game || !game._id) return callback(new Error('No game ' + artifact));
-
-        // TODO remove all related assets
-        dao.remove(game, callback);
+        async.waterfall([
+            // remove the game first so no other artifacts can be added to it
+            async.apply(dao.remove, game),
+            // get the game's artifacts
+            app.services.artifacts.listByGame,
+            function(artifacts, cb){
+                // remove artifacts
+                async.each(artifacts, app.services.artifacts.destroy, cb);
+            },
+            // TODO remove assets!
+            function(cb){cb(null, game);}
+        ], callback);
     };
 
     /**

@@ -81,8 +81,15 @@ module.exports = function (app, options){
             var update = utils.getUpdate(entity, fields);
             var query = utils.getSelectorById(options, entity[options.id]);
             var sort = [['_id', 'asc']];
-            app.logger.debug("update : " + JSON.stringify(update));
-            collection.update(query, sort, update, {'safe':true, 'new':true}, callback);
+            app.logger.debug("findAndModify : " + JSON.stringify(update));
+            collection.findAndModify(query, sort, update, {'safe':true, 'new':true},
+                // findAndModify adds a result argument after the entity
+                // that, combined with functional construction logic can produce unintended behaviors
+                // the details document is defined here : http://docs.mongodb.org/manual/reference/command/findAndModify/
+                function(err, entity, details){
+                    app.logger.debug("result : " + JSON.stringify(details));
+                    return callback(err, entity);
+                });
         };
 
         /**

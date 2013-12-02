@@ -15,6 +15,9 @@ var config = require('./config/config');
 
 var app = express();
 app.logger = require('./config/logger');
+process.on('exit', function () {
+    app.logger.info("Exit detected");
+});
 var keypath = require("keypath");
 
 // first connect to DB
@@ -42,19 +45,22 @@ require('./config/mongo')(app, config, function(err, db){
         // bootstrap routes
         require('./config/routes')(app, config, passport);
 
-        if (config.bootstrapSampleGame){
-            // bootstrap sample game
-            require('./sampleGame')(app, config);
+        function startServer(err){
+            if(err) throw err;
+            // start the app by listening on <port>
+            var port = process.env.PORT || config.port;
+            app.listen(port);
+            app.logger.info('Artifacts server started on port ' + port);
+            // expose app
+            exports = module.exports = app;
         }
 
-        // start the app by listening on <port>
-        var port = process.env.PORT || config.port;
-        app.listen(port);
-
-        app.logger.info('Artifacts server started on port ' + port);
-
-        // expose app
-        exports = module.exports = app;
+        if (config.bootstrapSampleGame){
+            // bootstrap sample game
+            require('./sampleGame')(app, config, startServer);
+        } else {
+            startServer();
+        }
 
     });
 });

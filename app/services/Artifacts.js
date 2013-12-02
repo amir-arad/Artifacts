@@ -14,7 +14,7 @@ module.exports = function (app, config){
      */
     var dao = new (require('../dal/Dao'))(app, {
         'collectionName':'artifacts',
-        'listFields':['name', 'location']
+        'listFields':['name', 'description', 'location']
     });
 
     /**
@@ -59,7 +59,7 @@ module.exports = function (app, config){
 
         // TODO BL to validate location
 
-        dao.updateFields(newFields, ['name', 'location'], callback);
+        dao.updateFields(newFields, ['name', 'location', 'description'], callback);
     };
 
     /**
