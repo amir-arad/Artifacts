@@ -1,26 +1,16 @@
 {
-    "db": "mongodb://localhost/mean",
     "app": {
-        "name": "MEAN - A Modern Stack - Production"
+        "name" : "Artifacts - live games solutions system",
+        "adminPassword" : "1234"
     },
-    "facebook": {
-        "clientID": "APP_ID",
-        "clientSecret": "APP_SECRET",
-        "callbackURL": "http://localhost:3000/auth/facebook/callback"
+    "cookie_secret" : "cookies are not food",
+    "db" : "mongodb://127.0.0.1:27017/artifacts",
+    "gridfs" : {
+        "initTest" : true,
+        "bucket" : "assets",
+        "prefix" : "",
+        "fileSizeLimit" : 17000000,
+        "contentTypeFilter" : "^image\/.*$"
     },
-    "twitter": {
-        "clientID": "CONSUMER_KEY",
-        "clientSecret": "CONSUMER_SECRET",
-        "callbackURL": "http://localhost:3000/auth/twitter/callback"
-    },
-    "github": {
-        "clientID": "APP_ID",
-        "clientSecret": "APP_SECRET",
-        "callbackURL": "http://localhost:3000/auth/github/callback"
-    },
-    "google": {
-        "clientID": "APP_ID",
-        "clientSecret": "APP_SECRET",
-        "callbackURL": "http://localhost:3000/auth/google/callback"
-    }
+    "bootstrapSampleGame" : "no-force"
 }
