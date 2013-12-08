@@ -44,9 +44,9 @@ module.exports = function (app, config){
      * Create a player
      */
     this.create = function(game, player, callback) {
-        var err;
         // validation
-        if (err = validateGameAndName(game, player)) return callback(err);
+        var err = validateGameAndName(game, player);
+        if (err) return callback(err);
         if (game.players[player.name]) return callback(new Error('Player name already exists ' + player.name));
 
         // the creation itself
@@ -64,9 +64,9 @@ module.exports = function (app, config){
      * Update a player
      */
     this.update = function(game, player, newFields, callback) {
-        var err;
         // validation
-        if (err = validateGameAndName(game, player)) return next(err);
+        var err = validateGameAndName(game, player);
+        if (err) return callback(err);
         newFields = _.clone(newFields);
         newFields.name = player.name;
 
@@ -79,9 +79,9 @@ module.exports = function (app, config){
      * Delete an game
      */
     this.destroy = function(game, player, callback) {
-        var err;
         // validation
-        if (err = validateGameAndName(game, player)) return callback(err);
+        var err = validateGameAndName(game, player);
+        if (err) return callback(err);
 
         // the deletion itself
         delete game.players[player.name];      // just in case

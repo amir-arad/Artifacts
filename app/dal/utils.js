@@ -32,14 +32,14 @@ module.exports.formatListFields = formatListFields;
 function formatUpdateFields(updateFields) {
     updateFields = formatListFields(updateFields);
     for (var field in updateFields) {
-        if (updateFields.hasOwnProperty(field) && updateFields[field] == true) {
+        if (updateFields.hasOwnProperty(field) && updateFields[field] === true) {
             updateFields[field] = '$set';
         }
     }
     return updateFields;
 }
 
-module.exports.id = function id(id){
+module.exports.id = function (id){
     return new ObjectId(id);
 };
 
@@ -48,17 +48,17 @@ module.exports.getListFunction = function getListFunction(listFields, collection
         listFields = formatListFields(listFields);
         return function(query){
             return collection.find(query, listFields);
-        }
+        };
     } else {
         return collection.find;
     }
-}
+};
 
 module.exports.getSelectorById = function getSelectorById(options, id, wrapWithObj) {
     var res = {};
     res[options.id] = (wrapWithObj ? module.exports.id(id) : id);
     return res;
-}
+};
 
 // according to ECMAScript standard
 function isArray(entity) {
@@ -73,7 +73,7 @@ module.exports.removeField = function removeField(entity, field) {
     } else {
         delete entity[field];
     }
-}
+};
 
 function addFieldToUpdate(result, method, field, value) {
     if (!result[method]) result[method] = {};
@@ -121,13 +121,13 @@ module.exports.getUpdate = function getUpdate(entity, fields) {
         }
     }
     return result;
-}
+};
 
 module.exports.popAttr = function popAttr(options, attrName) {
     var res = options[attrName];
     delete options[attrName];
     return res;
-}
+};
 module.exports.endsWith = function endsWith(str, suffix) {
     return str.indexOf(suffix, str.length - suffix.length) !== -1;
-}
+};

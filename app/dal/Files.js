@@ -30,7 +30,7 @@ module.exports = function (app, options){
      */
     this.getMetadataDao = function(){
         return metadataDao;
-    }
+    };
 
     /**
      * Create a file
@@ -103,4 +103,4 @@ module.exports = function (app, options){
                 gridFile.stream().pipe(writeableStream);
             });
     };
-}
+};

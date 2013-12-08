@@ -25,7 +25,7 @@ module.exports = function (app, options){
 
     this.getSelectorById = function(id, wrapWithObj) {
         return utils.getSelectorById(options, id, wrapWithObj);
-    }
+    };
 
     // functionality will be added to the dao only after there is a collection
     app.db.collection(options.collectionName, function(err, collection) {
@@ -67,7 +67,7 @@ module.exports = function (app, options){
             } else {
                 collection.findOne(utils.getSelectorById(options, query, true),callback);
             }
-        }
+        };
 
         /**
          * Create an entity
@@ -117,4 +117,4 @@ module.exports = function (app, options){
             });
         };
     });
-}
+};

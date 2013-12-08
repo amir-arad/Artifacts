@@ -26,7 +26,7 @@ module.exports = function (app, config){
      * Find game by name, query, or game entity
      */
     this.game = function(query, callback) {
-        var query = (typeof query === 'string')? {name : query} : query;
+        query = (typeof query === 'string')? {name : query} : query;
         dao.load(query, function(err, game) {
             if (err) return callback(err);
             if (!game) return callback(new app.errors.NotFound('Failed to load game ' + query));

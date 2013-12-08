@@ -17,23 +17,23 @@ module.exports.writeJsonToRes = function writeJsonPToRes(app, req, res, obj) {
         .replace(/\u2028/g, '\\u2028')
         .replace(/\u2029/g, '\\u2029');
     res.write(partOfResponse);
-}
+};
 
 module.exports.updateCopyExcept = function updateCopyExcept(src, updates, except) {
     var originals = {};
     if (typeof except === 'string'){
         originals[except] = src[except];
-    } else if (typeof except === 'array'){
+    } else if (except instanceof Array){
         for (var i = 0; i < except.length; ++i) {
             originals[except[i]] = src[except[i]];
         }
     }
     return _.extend(_.clone(src), updates, originals);
-}
+};
 
 module.exports.nullStream = function(){
     var result = new stream.WriteStream({'decodeStrings': false});
-    result._write = function(c, e, cb){cb(null);}
+    result._write = function(c, e, cb){cb(null);};
     return result;
-}
+};
 

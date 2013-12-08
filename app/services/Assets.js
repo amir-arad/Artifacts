@@ -39,7 +39,7 @@ module.exports = function (app, config){
             if (!asset) return callback(new app.errors.NotFound('Failed to load asset ' + id));
             return callback( null, asset);
         });
-    };
+    }
     this.asset = loadAssetByFileOrId;
 
     /**
@@ -65,7 +65,7 @@ module.exports = function (app, config){
             if (!file) return callback(new Error('Failed to create asset ' + filename));
             return callback( null, file);
         });
-    }
+    };
 
     this.changeArtifact = function(asset, artifact, add, callback){
         if (!asset || !asset._id) return callback(new Error('No asset id ' + asset));

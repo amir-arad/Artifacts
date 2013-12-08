@@ -57,8 +57,8 @@ module.exports = function (app, config){
         artifact.game = game._id;
         artifact._id = id(game, artifact.name);
         // validation
-        var err;
-        if (err = validatePlayerOrLocation(game, artifact)) return callback(err);
+        var err = validatePlayerOrLocation(game, artifact);
+        if (err) return callback(err);
         dao.insert(artifact, callback);
     };
 
@@ -73,7 +73,8 @@ module.exports = function (app, config){
         // validation
         app.services.games.game(newFields.game, function(err, game){
             if (err) return callback(err);
-            if (err = validatePlayerOrLocation(game, newFields)) return callback(err);
+            err = validatePlayerOrLocation(game, newFields);
+            if (err) return callback(err);
             // TODO BL to validate location
 
             dao.updateFields(newFields, mutableAttributes, callback);

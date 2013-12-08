@@ -76,4 +76,4 @@ module.exports = function(app, config, passport) {
     app.param('assetFileName', assets.assetAsFile);
     app.get('/games/:gameId/artifacts/:artifactId/:assetFileName', auth.player.authorize, assets.show);
 
-}
+};
