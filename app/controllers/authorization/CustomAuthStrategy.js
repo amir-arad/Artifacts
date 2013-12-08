@@ -19,7 +19,7 @@ module.exports = function (app, config, passport, strategyName, getUserFromReq, 
             usernameField: 'password',
             passwordField: 'password',
             passReqToCallback: true
-        }, function (req, password, password, done) {
+        }, function (req, password, password_, done) {
             return done(null, getUserFromReq(req, password));
         });
         this.name = strategyName;
