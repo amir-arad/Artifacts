@@ -21,7 +21,7 @@ module.exports = function(app, config, callback) {
             return callback(null, db);
         }
     });
-}
+};
 
 function testFiles(app, db, config, callback) {
     app.logger.info("testing write-read-delete operations on gridFS");

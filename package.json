@@ -19,7 +19,6 @@
     },
     "dependencies": {
         "express": "latest",
-        "jade": "latest",
         "mongodb": "latest",
         "connect-mongo": "latest",
         "connect-flash": "latest",

@@ -1,4 +1,5 @@
-window.app = angular.module('mean', ['ngCookies', 'ngResource', 'ui.bootstrap', 'ui.route', 'mean.system', 'mean.articles']);
+window.app = angular.module('artifacts',
+    ['ngCookies', 'restangular', 'ui.bootstrap', 'ui.route', 'artifacts.system', 'mean.articles']);
 
-angular.module('mean.system', []);
+angular.module('artifacts.system', []);
 angular.module('mean.articles', []);

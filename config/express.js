@@ -32,10 +32,6 @@ module.exports = function(app, config, passport, db) {
         app.use(express.logger('dev'));
     }
 
-    //Set views path, template engine and default layout
-    app.set('views', config.root + '/app/views');
-    app.set('view engine', 'jade');
-
     //Enable jsonp
     app.enable("jsonp callback");
 
@@ -44,7 +40,7 @@ module.exports = function(app, config, passport, db) {
 
     //bodyParser should be above methodOverride
     // app.use(express.bodyParser());  replaced bodyParser with urlencoded and json
-    app.use(express.json())
+    app.use(express.json());
     app.use(express.urlencoded());
     app.use(express.methodOverride());
 

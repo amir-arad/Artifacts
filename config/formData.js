@@ -40,7 +40,7 @@ var init  = function(req, res, next) {
     } else {
         next();
     }
-}
+};
 
 // middleware chain
 module.exports = [setup, fieldsToBody, init];

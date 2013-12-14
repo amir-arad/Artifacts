@@ -37,4 +37,10 @@ module.exports = function (app, config, passport, strategyName, getUserFromReq, 
 
     this.authenticate = passport.authenticate(strategyName);
 
+    /**
+     * Controller to read the current credentials
+     */
+    this.getCredentials = function(req, res, next) {
+        res.jsonp(req.user || null);
+    };
 };

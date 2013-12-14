@@ -9,9 +9,9 @@ var CustomAuthStrategy = require('./CustomAuthStrategy');
 
 module.exports = function (app, config, passport, authorizeFallback){
 
-    function User(type, gameId, playerName){
+    function User(type, game, playerName){
         this.type = type;
-        this.gameId = gameId;
+        this.game = game;
         this.playerName = playerName;
     }
 
@@ -28,14 +28,14 @@ module.exports = function (app, config, passport, authorizeFallback){
 
 
     function checkUserGame(req) {
-        return req.user.gameId &&
+        return req.user.game &&
             req.game &&
-            req.user.gameId === req.game._id.toHexString();
+            req.user.game === req.game.name;
     }
 
     this.storyteller = new CustomAuthStrategy(app, config, passport, "storyteller",
         function(req, password){
-            return (req.game && req.game.password === password)? new User("storyteller", req.game._id) : null;
+            return (req.game && req.game.password === password)? new User("storyteller", req.game.name) : null;
         }, function(req){
             return checkUserType(req, "storyteller") && checkUserGame(req);
         }, this.sysop.authorize);
@@ -44,11 +44,11 @@ module.exports = function (app, config, passport, authorizeFallback){
     this.player = new CustomAuthStrategy(app, config, passport, "player",
         function(req, password){
             return (req.player && req.player.password === password)?
-                new User("player", req.game._id, req.player.name) : null;
+                new User("player", req.game.name, req.player.name) : null;
         }, function(req){
             return checkUserType(req, "player") && checkUserGame(req) &&
                 req.user.playerName &&
                 (req.player && req.user.playerName === req.player.name ||
-                        req.artifact && req.user.playerName === req.artifact.location);
+                        req.artifact && req.user.playerName === req.artifact.player);
         }, this.storyteller.authorize);
 };

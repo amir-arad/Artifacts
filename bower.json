@@ -3,11 +3,21 @@
     "description": "Artifacts - live games solutions system",
     "version": "0.1.0",
     "dependencies": {
-        "bootstrap": "latest",
+        "angular-local-storage" : "latest",
+        "angular-mobile-nav": "latest",
+        "restangular": "latest",
+        "lodash": "latest",
         "angular": "latest",
         "angular-resource": "latest",
+        "angular-animate": "latest",
         "angular-cookies": "latest",
+        "angular-mocks": "latest",
+        "angular-route": "latest",
+        "bootstrap": "2.3.*",
         "angular-bootstrap": "latest",
         "angular-ui-utils": "latest"
+    },
+    "resolutions": {
+        "angular": "1.2.5"
     }
 }
