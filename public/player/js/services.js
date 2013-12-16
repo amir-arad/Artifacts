@@ -63,10 +63,9 @@ player.services.apiService = function ($log, Restangular, _, localStorageService
             // https://github.com/mgonto/restangular#adding-custom-methods-to-collections
             // get /games/:gameId/players/:playerId/artifacts
             return basePlayer.one('artifacts').getList().then(function(artifacts){
-                return _(artifacts).forEach(function(artifact) {
+                return _.forEach(artifacts, function(artifact) {
                     $log.debug('enriching artifact', artifact.name);
-                    artifact.examine = _.partial(service.examine, artifact.name);
-                    artifact.url = baseArtifact(artifact.name).getRestangularUrl();
+                    artifact.iconUrl = baseArtifact(artifact.name).one(artifact.iconAsset).getRestangularUrl();
                 });
             });
         },

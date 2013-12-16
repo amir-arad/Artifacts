@@ -3,6 +3,8 @@
     "description": "Artifacts - live games solutions system",
     "version": "0.1.0",
     "dependencies": {
+        "font-awesome" : "latest",
+        "topcoat" : "latest",
         "angular-local-storage" : "latest",
         "angular-mobile-nav": "latest",
         "restangular": "latest",

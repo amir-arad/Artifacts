@@ -1,10 +1,58 @@
-
+@media (min-width: 100px) {
+    .nav-collapse.collapse {
+        height: auto !important;
+        overflow: visible !important;
+    }
+}
 /* Override some defaults */
 html, body {
     background-color: #eee;
 }
-body {
-    padding-top: 40px;
+
+
+.artifact-list-row{
+    display: table;
+    width: 100%;
+    /*table-layout: fixed;*/
+    /*white-space: nowrap;*/
+    /*margin: 0;*/
+    /*padding: 0;*/
+}
+
+.artifact-list-row div{
+    display: table-cell;
+}
+
+.artifact-icon {
+    height: 40px;
+}
+
+/* resize images */
+.artifact-icon img {
+    height: 100%;
+    height: 100%;
+}
+
+a {
+    text-decoration: none;
+    color: #FFFFFF;
+}
+
+a:link {
+    text-decoration: none;
+    color: #FFFFFF;
+}
+a:visited {
+    text-decoration: none;
+    color: #FFFFFF;
+}
+a:hover {
+    text-decoration: none;
+    color: #FFFFFF;
+}
+
+.list__item {
+
 }
 
 .navbar .nav>li>a.brand {
@@ -12,9 +60,9 @@ body {
     margin-left:0
 }
 .container {
-     /*width: 300px;*/
+    /*width: 300px;*/
     margin: 15px;
- }
+}
 
 /* The white background content wrapper */
 .content > .container {

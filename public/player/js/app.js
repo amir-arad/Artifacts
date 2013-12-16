@@ -17,11 +17,11 @@ angular.module('player', ['player.controllers', 'player.directives', 'player.fil
                 })
                 .when('/nearby', {
                     controller: 'nearbyController',
-                    templateUrl: 'view/nearby.html'
+                    templateUrl: 'view/artifactList.html'
                 })
                 .when('/inventory', {
                     controller: 'inventoryController',
-                    templateUrl: 'view/inventory.html',
+                    templateUrl: 'view/artifactList.html',
                     resolve: {
                         inventory: function (apiService) {
                             return apiService.inventory();

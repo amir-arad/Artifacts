@@ -53,20 +53,24 @@ player.controllers.alertsController =  function($scope, alertService) {
 };
 
 
-player.controllers.inventoryController =  function($scope, $log, apiService) {
+player.controllers.inventoryController =  function($scope, $log, apiService, inventory) {
+    $scope.title = 'You have';
+    $scope.artifacts = inventory;
     $scope.refresh = function(){
         $log.debug('refreshing inventory');
         apiService.inventory().then(function(inventory){
-            $scope.inventory = inventory;
+            $scope.artifacts = inventory;
         });
     };
 };
 
-player.controllers.nearbyController =  function($scope, $log, apiService) {
+player.controllers.nearbyController =  function($scope, $log, apiService, nearby) {
+    $scope.title = 'You see around you';
+    $scope.artifacts = nearby;
     $scope.refresh = function(){
         $log.debug('refreshing nearby');
         apiService.nearby().then(function(nearby){
-            $scope.nearby = nearby;
+            $scope.artifacts = nearby;
         });
     };
 };
