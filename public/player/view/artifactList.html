@@ -1,5 +1,4 @@
 <div class="topcoat-list list">
-
     <div class="topcoat-list__header ">
         <div class="artifact-list-row ">
             <div class="fa-2x left three-quarters">
@@ -12,19 +11,16 @@
             </div>
         </div>
     </div>
-
     <ul class="topcoat-list__container">
-        <li ng-repeat="artifact in artifacts" class="topcoat-list__item">
-            <a ng-click="examine(artifact.name)">
-                <div class="artifact-list-row">
-                    <div class="artifact-icon left quarter">
-                        <img class="img-rounded" ng-src="{{artifact.iconUrl}}">
-                    </div>
-                    <div class="fa-2x list__item left three-quarters">
-                        {{artifact.name}}
-                    </div>
+        <button class=" artifact-list-row topcoat-icon-button button--quiet"  ng-click="examine(artifact.name)">
+            <li ng-repeat="artifact in artifacts" class="topcoat-list__item">
+                <div class="artifact-icon left quarter">
+                    <img class="img-rounded" ng-src="{{artifact.iconUrl}}">
                 </div>
-            </a>
-        </li>
+                <div class="fa-2x list__item right half">
+                    {{artifact.name}}
+                </div>
+            </li>
+        </button>
     </ul>
 </div>

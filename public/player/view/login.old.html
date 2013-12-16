@@ -1,0 +1,33 @@
+<div class="row">
+    <!-- add http://angular-ui.github.io/bootstrap/ Typeahead -->
+    <div class="login-form">
+        <legend>Log In</legend>
+        <form class="form-horizontal">
+            <fieldset>
+                <div class="control-group">
+                    <label class="control-label"  for="inputEmail">Game</label>
+                    <div class="controls">
+                        <input type="text" placeholder="sampleGame" ng-model="game" />
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Player</label>
+                    <div class="controls">
+                        <input type="text" placeholder="bob" ng-model="player" />
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">Password</label>
+                    <div class="controls">
+                        <input type="password" placeholder="king123" ng-model="password" />
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <button type="submit" class="btn-primary" ng-click="login()">Log In</button>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+</div>

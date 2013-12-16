@@ -6,14 +6,23 @@ var player = player || {
 };
 
 angular.module('player', ['player.controllers', 'player.directives', 'player.filters', 'player.services',
-        'ngRoute', 'ngAnimate', 'ui.bootstrap', 'LocalStorageModule', 'ajoslin.mobile-navigate']).
-    config(['$routeProvider', '$locationProvider', '$httpProvider',
+        'ngRoute', 'ngAnimate', 'ui.bootstrap', 'LocalStorageModule', 'ajoslin.mobile-navigate'])
+    .config(["$provide",function($provide){
+        $provide.decorator("$log",function($delegate, logService){
+            return logService($delegate);
+        });
+    }])
+    .config(['$routeProvider', '$locationProvider', '$httpProvider',
         function ($routeProvider, $locationProvider, $httpProvider) {
 //        $locationProvider.html5Mode(true);
             $routeProvider
                 .when('/login', {
                     controller: 'loginController',
                     templateUrl: 'view/login.html'
+                })
+                .when('/logout', {
+                    controller: 'logoutController',
+                    template : 'Logging out...'
                 })
                 .when('/nearby', {
                     controller: 'nearbyController',
@@ -40,5 +49,5 @@ angular.module('player', ['player.controllers', 'player.directives', 'player.fil
                 .otherwise({
                     redirectTo: '/login'
                 });
-             $httpProvider.interceptors.push('HttpErrorHandlerService');
+            $httpProvider.interceptors.push('HttpErrorHandlerService');
         }]);

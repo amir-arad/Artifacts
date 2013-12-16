@@ -21,6 +21,18 @@ player.controllers.loginController =  function ($scope, $log, $location, $naviga
     });
 };
 
+/**
+ * The login controller.
+ */
+player.controllers.logoutController =  function ($log, $navigate, authService) {
+    $log.debug('logout called');
+    authService.logout().then(function(){
+        $navigate.go('/login');
+    });
+};
+
+
+
 player.controllers.headerController =  function ($scope, $location, $navigate, authService) {
     $scope.getClass = function(path) {
         if ($location.path().substr(1, path.length) == path) {
@@ -38,6 +50,9 @@ player.controllers.headerController =  function ($scope, $location, $navigate, a
     }, {
         "title": "Look Around",
         "link": "nearby"
+    }, {
+        "title": "Log out",
+        "link": "logout"
     }];
     authService.isLoggedIn().then(function(isLoggedIn){
         if ($location.path() != '/login' && !isLoggedIn){

@@ -41,8 +41,8 @@ player.services.apiService = function ($log, Restangular, _, localStorageService
         return baseGame.one('artifacts', artifactId);
     }
     var service = {
-        init : function (gameId, playerId) {
-            $log.debug('init called', gameId, playerId);
+        init : function initApiService (gameId, playerId) {
+            $log.debug('context detected', gameId, playerId);
             if (gameId && playerId){
                 localStorageService.add('gameId',gameId);
                 localStorageService.add('playerId',playerId);
@@ -51,31 +51,98 @@ player.services.apiService = function ($log, Restangular, _, localStorageService
                 basePlayer.addRestangularMethod('login', 'post', 'login');
             }
         },
-        getUser: function(){
+        getUser: function getUserFromApi(){
             // get /games/:gameId/players/:playerId/login
             return Restangular.one('login').get();
         },
-        login: function (password) {
+        login: function loginFromApi(password) {
             // post /games/:gameId/players/:playerId/login
             return basePlayer.login({"password" : password});
         },
-        inventory: function () {
+        logout: function logoutFromApi(password) {
+            // post /logout
+            return Restangular.one('logout').post();
+        },
+        inventory: function inventoryFromApi() {
             // https://github.com/mgonto/restangular#adding-custom-methods-to-collections
             // get /games/:gameId/players/:playerId/artifacts
             return basePlayer.one('artifacts').getList().then(function(artifacts){
-                return _.forEach(artifacts, function(artifact) {
-                    $log.debug('enriching artifact', artifact.name);
+                return _.forEach(artifacts, function enrichArtifactFromApi(artifact) {
+                    $log.debug('artifact', artifact.name);
                     artifact.iconUrl = baseArtifact(artifact.name).one(artifact.iconAsset).getRestangularUrl();
                 });
             });
         },
-        examine: function (artifactId) {
+        examine: function examineFromApi(artifactId) {
             // get /games/:gameId/artifacts/:artifactId
             return baseArtifact(artifactId).get();
         }
     };
     service.init(localStorageService.get('gameId'), localStorageService.get('playerId'));
     return service;
+};
+
+
+
+
+if (Error.captureStackTrace){  // only works in chrome
+    Object.defineProperty(window, '__stack', {
+        get : function() {
+            var orig = Error.prepareStackTrace;
+            Error.prepareStackTrace = function(_, stack) {
+                return stack;
+            };
+            var err = new Error;
+            Error.captureStackTrace(err, Function.caller);
+            var stack = err.stack;
+            Error.prepareStackTrace = orig;
+            return stack;
+        }
+    });
+}
+
+/**
+ * custom logging solution
+ */
+// todo customize https://github.com/siosio/consoleLink to match
+player.services.logService = function () {
+    return function($delegate){
+        var stackdepth = 3;
+        function pathFromUrl(url){
+            var parser = document.createElement('a');
+            parser.href = url;
+            return parser.pathname;
+        }
+
+        function proxy(type, args){
+            var stack = window.__stack;
+            var link = stack ? "FROM " + pathFromUrl(stack[stackdepth].getFileName()) + ':' + stack[stackdepth].getFunction().name + ':' + stack[stackdepth].getLineNumber() : "";
+            var now = new Date().toISOString();
+            // turn into array via slice() and then join() into a string
+            var content = Array.prototype.slice.call(args).join(" ");
+            // formatting
+            var line = now + " " + type.toUpperCase() + " " + content + " | " + link;
+            // Call the original with the output prepended with formatted timestamp
+            $delegate[type].apply(this, [line]);
+        }
+        return  {
+            debug: function(){
+                proxy('debug', arguments);
+            },
+            log: function(){
+                proxy('log', arguments);
+            },
+            info: function(){
+                proxy('info', arguments);
+            },
+            error: function(){
+                proxy('error', arguments);
+            },
+            warn:function(){
+                proxy('warn', arguments);
+            }
+        };
+    };
 };
 
 /**
@@ -85,6 +152,13 @@ player.services.apiService = function ($log, Restangular, _, localStorageService
  */
 player.services.authService = function ($log, apiService) {
     var service = {
+        logout: function () {
+            $log.debug('logout called');
+            return apiService.logout().then(function(){
+                $log.debug('logged out');
+                apiService.init(null, null);
+            });
+        },
         login: function (gameId, playerId, password) {
             $log.debug('login called', gameId, playerId, password);
             return service.isLoggedIn().then(function(loggedIn){
