@@ -7,15 +7,17 @@ angular.module('player.controllers', []).
 /**
  * The login controller.
  */
-player.controllers.loginController =  function ($scope, $log, $location, $navigate, authService) {
+player.controllers.loginController =  function ($rootScope, $scope, $log, $location, $navigate, authService) {
     $scope.login = function() {
         $log.debug('login sent', $scope.game, $scope.player, $scope.password);
         authService.login($scope.game, $scope.player, $scope.password).then(function(){
+            $rootScope.loginPage = false;
             $navigate.go('/inventory');
         });
     };
     authService.isLoggedIn().then(function(isLoggedIn){
         if ($location.path() == '/login' && isLoggedIn){
+            $rootScope.loginPage = false;
             $navigate.go('/inventory');
         }
     });
@@ -24,16 +26,17 @@ player.controllers.loginController =  function ($scope, $log, $location, $naviga
 /**
  * The login controller.
  */
-player.controllers.logoutController =  function ($log, $navigate, authService) {
+player.controllers.logoutController =  function ($rootScope, $log, $navigate, authService) {
     $log.debug('logout called');
     authService.logout().then(function(){
+        $rootScope.loginPage = true;
         $navigate.go('/login');
     });
 };
 
 
 
-player.controllers.headerController =  function ($scope, $location, $navigate, authService) {
+player.controllers.headerController =  function ($rootScope, $scope, $location, $navigate, authService) {
     $scope.getClass = function(path) {
         if ($location.path().substr(1, path.length) == path) {
             return "active";
@@ -41,6 +44,7 @@ player.controllers.headerController =  function ($scope, $location, $navigate, a
             return "";
         }
     };
+    $rootScope.loginPage = $location.path() == '/login';
     $scope.navigate = function(path) {
         $navigate.go('/'+path);
     };
@@ -55,7 +59,8 @@ player.controllers.headerController =  function ($scope, $location, $navigate, a
         "link": "logout"
     }];
     authService.isLoggedIn().then(function(isLoggedIn){
-        if ($location.path() != '/login' && !isLoggedIn){
+        if (!$rootScope.loginPage && !isLoggedIn){
+            $rootScope.loginPage = true;
             $navigate.go('/login');
         }
     });

@@ -116,7 +116,7 @@ player.services.logService = function () {
 
         function proxy(type, args){
             var stack = window.__stack;
-            var link = stack ? "FROM " + pathFromUrl(stack[stackdepth].getFileName()) + ':' + stack[stackdepth].getFunction().name + ':' + stack[stackdepth].getLineNumber() : "";
+            var link = stack ? "FROM " + pathFromUrl(stack[stackdepth].getFileName()) + ':' + stack[stackdepth].getLineNumber() : "";
             var now = new Date().toISOString();
             // turn into array via slice() and then join() into a string
             var content = Array.prototype.slice.call(args).join(" ");

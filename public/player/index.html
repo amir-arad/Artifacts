@@ -11,24 +11,24 @@
     <link rel="stylesheet" href="/lib/topcoat/css/topcoat-mobile-dark.css" media="screen">
     <!-- http://getbootstrap.com/2.3.2/base-css.html -->
     <link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.css" media="screen">
-    <link rel="stylesheet" href="/lib/bootstrap/docs/assets/css/bootstrap.css" media="screen">
-    <link rel="stylesheet" href="/lib/bootstrap/docs/assets/css/bootstrap-responsive.css" media="screen">
-    <link rel="stylesheet" href="/lib/bootstrap/docs/assets/css/docs.css" media="screen">
+    <!--<link rel="stylesheet" href="/lib/bootstrap/docs/assets/css/bootstrap.css" media="screen">-->
+    <!--<link rel="stylesheet" href="/lib/bootstrap/docs/assets/css/bootstrap-responsive.css" media="screen">-->
+    <!--<link rel="stylesheet" href="/lib/bootstrap/docs/assets/css/docs.css" media="screen">-->
     <link rel="stylesheet" href="/lib/angular-mobile-nav/mobile-nav.css" media="screen">
     <link rel="stylesheet" href="css/theme.css" media="screen">
 
     <!--  <link rel="stylesheet" href="/css/common.css">-->
 </head>
 <body ng-app="player">
-<div data-ng-include="'view/header.html'" data-role="navigation" class="navbar navbar-inverse navbar-fixed-top"></div>
-<div class="content">
-    <div ng-controller="alertsController">
-        <alert ng-repeat="alert in alerts" type="alert.type" close="closeAlert($index)">{{alert.msg}}</alert>
-    </div>
-    <div class="container">
-        <div data-ng-view></div>
-    </div>
+
+<div  data-ng-controller="headerController">
+    <div data-ng-include="'view/header.html'" data-role="navigation"  ng-hide="loginPage"></div>
 </div>
+<div ng-controller="alertsController">
+    <alert ng-repeat="alert in alerts" type="alert.type" close="closeAlert($index)">{{alert.msg}}</alert>
+</div>
+
+<div data-ng-view></div>
 
 
 <!--AngularJS-->

@@ -1,8 +1,6 @@
-<div class="navbar-inner" data-ng-controller="headerController">
-    <ul class="nav">
-        <!--   ng-class="getClass(item.link)"   ng-class="{active: $uiRoute}" -->
-        <li data-ng-repeat="item in menu" ui-route="/{{item.link}}" ng-class="getClass(item.link)">
-            <a ng-click="navigate(item.link)">{{item.title}}</a>
-        </li>
-    </ul>
+<div class="topcoat-tab-bar full">
+    <label class="topcoat-tab-bar__item" data-ng-repeat="item in menu"  ui-route="/{{item.link}}" ng-class="getClass(item.link)">
+        <input type="radio" name="topcoat">
+        <button class="topcoat-tab-bar__button full" ng-click="navigate(item.link)">{{item.title}}</button>
+    </label>
 </div>
