@@ -121,7 +121,7 @@ player.services.logService = function () {
             // turn into array via slice() and then join() into a string
             var content = Array.prototype.slice.call(args).join(" ");
             // formatting
-            var line = now + " " + type.toUpperCase() + " " + content + " | " + link;
+            var line = now + " " + type.toUpperCase() + " " + content + " | " + link;   // TODO add spaces
             // Call the original with the output prepended with formatted timestamp
             $delegate[type].apply(this, [line]);
         }

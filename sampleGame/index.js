@@ -19,10 +19,10 @@ var sampleGame = {
         zander : {name : 'zander', password : 'l33t!', description : 'zander is a new guy'},
     },
     artifacts : {
-        rock : {name : 'rock', description : 'a rock', player : 'alice', mainAsset : 'rock.jpg', iconAsset: 'rock.jpg', assets : []},
-        paper : {name : 'paper', description : 'a piece of paper', player : 'bob', mainAsset : 'paper.jpg', iconAsset: 'paper.jpg', assets : []},
-        scissors : {name : 'scissors', description : 'a pair of cissors', player : 'zander', mainAsset : 'scissors.jpg', iconAsset: 'scissors.jpg', assets : []},
-        magnet : {name : 'magnet', description : 'a magnet', player : 'zander', mainAsset : 'magnet.jpg', iconAsset: 'magnet.jpg', assets : []}
+        rock : {name : 'rock', description : 'a rock', player : 'alice', mainAsset : 'rock.jpg', iconAsset: 'rock.icon.jpg', assets : []},
+        paper : {name : 'paper', description : 'a piece of paper', player : 'bob', mainAsset : 'paper.jpg', iconAsset: 'paper.icon.jpg', assets : []},
+        scissors : {name : 'scissors', description : 'a pair of cissors', player : 'zander', mainAsset : 'scissors.jpg', iconAsset: 'scissors.icon.jpg', assets : []},
+        magnet : {name : 'magnet', description : 'a magnet', player : 'zander', mainAsset : 'magnet.jpg', iconAsset: 'magnet.icon.jpg', assets : []}
     }
 };
 

@@ -8,7 +8,7 @@ var player = player || {
 angular.module('player', ['player.controllers', 'player.directives', 'player.filters', 'player.services',
         'ngRoute', 'ngAnimate', 'ui.bootstrap', 'LocalStorageModule', 'ajoslin.mobile-navigate'])
     .config(["$provide",function($provide){
-        $provide.decorator("$log",function($delegate, logService){
+        $provide.decorator("$log", function($delegate, logService){
             return logService($delegate);
         });
     }])
