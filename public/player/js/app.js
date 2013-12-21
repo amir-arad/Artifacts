@@ -29,10 +29,6 @@ angular.module('player', ['player.controllers', 'player.directives', 'player.fil
                     controller: 'logoutController',
                     template : 'Logging out...'
                 })
-                .when('/nearby', {
-                    controller: 'nearbyController',
-                    templateUrl: 'view/artifactList.html'
-                })
                 .when('/inventory', {
                     controller: 'inventoryController',
                     templateUrl: 'view/artifactList.html',

@@ -25,7 +25,7 @@ module.exports = function(app, config, passport, db) {
 
     //Setting the fav icon and static folder
     app.use(express.favicon());
-    app.use(express.static(config.root + '/public'));
+    app.use(express.static(config.root + '/public', { maxAge: config.maxAge }));
 
     //Don't use logger for test env
     if (process.env.NODE_ENV !== 'test') {

@@ -1,8 +1,27 @@
 var player = player || {};
 player.controllers = {};
 
+player.controllers._ = function () {
+    return window._; // assumes loDash has already been loaded on the page
+};
+
 angular.module('player.controllers', ['angular-carousel'])
     .controller(player.controllers)
+    .config(['$provide', function($provide){   // listener infra for controller-controller communication
+        $provide.decorator('$rootScope', ['$delegate', function($delegate){
+
+            Object.defineProperty($delegate.constructor.prototype, '$onRootScope', {
+                value: function(name, listener){
+                    var unsubscribe = $delegate.$on(name, listener);
+                    this.$on('$destroy', unsubscribe);
+                },
+                enumerable: false
+            });
+
+
+            return $delegate;
+        }]);
+    }])
     .run( function($rootScope, $location, $navigate, authService) {
         // register listener to watch route changes
         $rootScope.$on( "$routeChangeStart", function(event, next, current) {
@@ -92,7 +111,7 @@ player.controllers.alertsController =  function($scope, alertService) {
 };
 
 
-player.controllers.inventoryController =  function($scope, $log, $navigate, apiService, inventory) {
+player.controllers.inventoryController =  function($rootScope, $scope, $log, $navigate, apiService, inventory) {
     $scope.title = 'You have';
     $scope.artifacts = inventory;
     $scope.refresh = function(){
@@ -104,21 +123,51 @@ player.controllers.inventoryController =  function($scope, $log, $navigate, apiS
     $scope.examine = function(artifactName){
         $navigate.go('/artifact/'+artifactName);
     };
+    $scope.$onRootScope('refreshInventory', function(){
+        $log.debug('refreshInventory event received');
+        $scope.refresh();
+    });
 };
 
-player.controllers.nearbyController =  function($scope, $log, apiService, nearby) {
-    $scope.title = 'You see around you';
-    $scope.artifacts = nearby;
-    $scope.refresh = function(){
-        $log.debug('refreshing nearby');
-        apiService.nearby().then(function(nearby){
-            $scope.artifacts = nearby;
+player.controllers.scannerController =  function($rootScope, $scope, $log, $timeout, apiService) {
+    function scan(){
+        $log.debug('scanning nearby');
+        apiService.nearby()
+            .then(function(nearby){
+                $scope.artifacts = nearby;
+            })['finally'](function(){
+            timer = $timeout(scan, 5000);
+        });
+    };
+    $scope.$onRootScope('refreshScanner', function(){
+        $log.debug('refreshScanner event received');
+        $timeout.cancel(timer);
+        scan();
+    });
+    $scope.refresh = scan;
+    // When the DOM element is removed
+    // cancel any pending timer.
+    $scope.$on("$destroy", function( event ) {
+            $timeout.cancel(timer);
+        }
+    );
+    var timer = $timeout(scan, 100);
+    $scope.toggleLeftNav = function(){
+        $rootScope.leftNav = !$rootScope.leftNav;
+    };
+
+    $scope.pickup = function(artifactId){
+        $timeout.cancel(timer);
+        $scope.artifacts = _.remove($scope.artifacts, {'name' : artifactId});
+        apiService.pickup(artifactId).then(function(){
+            scan();
+            $rootScope.$emit('refreshInventory');
         });
     };
 };
 
 
-player.controllers.artifactController =  function($scope, $log, $navigate, apiService, artifact) {
+player.controllers.artifactController =  function($rootScope, $scope, $log, $navigate, apiService, artifact) {
     $log.debug('inspecting artifact', artifact.name);
     $scope.artifact = artifact;
     $scope.inventory = function(){
@@ -126,6 +175,7 @@ player.controllers.artifactController =  function($scope, $log, $navigate, apiSe
     };
     $scope.drop = function(){
         apiService.drop(artifact.name).then(function(){
+            $rootScope.$emit('refreshScanner');
             $navigate.go('/inventory');
         });
     };

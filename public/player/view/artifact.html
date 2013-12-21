@@ -6,10 +6,10 @@
         </header>
         <article class="artifact-list-row">
             <div class="center half">
-                <button type="button" class="topcoat-button" ng-click="drop()">Drop {{artifact.name}}!</button>
+                <button type="button" class="topcoat-button" ng-click="drop()">Drop {{artifact.name}}</button>
             </div>
             <div class="center half">
-                <button type="button" class="topcoat-button--cta" ng-click="dropAlert = false">Oops!</button>
+                <button type="button" class="topcoat-button--cta" ng-click="dropAlert = false">Woops!</button>
             </div>
         </article>
     </aside>
@@ -19,12 +19,12 @@
     <header class="artifact-list-row">
         <div class="center quarter">
             <button class="topcoat-icon-button" ng-click="inventory()">
-                <span class="topcoat-icon fa fa-dropbox fa-btn"></span>    <!--fa-suitcase-->
+                <span class="topcoat-icon fa fa-list-ul fa-btn"></span>    <!--fa-suitcase-->
             </button>
         </div>
-        <h2 class="fa-2x center half">
+        <h1 class="center half">
             {{artifact.name}}
-        </h2>
+        </h1>
         <div class="center quarter">
             <button class="topcoat-icon-button" ng-click="dropAlert = true">
                 <span class="topcoat-icon fa fa-download fa-btn"></span>

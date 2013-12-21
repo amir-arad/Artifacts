@@ -3,6 +3,7 @@
         "name" : "Artifacts - live games solutions system",
         "adminPassword" : "1234"
     },
+    "maxAge" : 8640000,
     "cookie_secret" : "cookies are not food",
     "db" : "mongodb://127.0.0.1:27017/artifacts",
     "gridfs" : {
