@@ -31,6 +31,7 @@ angular.module('player.controllers', ['angular-carousel'])
                     if ((isLoggedIn? true : false) === $rootScope.loginPage) {
                         // needs a redirection
                         if (isLoggedIn){
+                            $rootScope.$emit('login');
                             // redirect to inventory
                             $navigate.go('/inventory');
                         } else {
@@ -51,15 +52,10 @@ player.controllers.loginController =  function ($rootScope, $scope, $log, $locat
         $log.debug('login sent', $scope.game, $scope.player, $scope.password);
         authService.login($scope.game, $scope.player, $scope.password).then(function(){
             $rootScope.loginPage = false;
+            $rootScope.$emit('login');
             $navigate.go('/inventory');
         });
     };
-//    authService.isLoggedIn().then(function(isLoggedIn){
-//        if ($location.path() == '/login' && isLoggedIn){
-//            $rootScope.loginPage = false;
-//            $navigate.go('/inventory');
-//        }
-//    });
 };
 
 /**
@@ -68,6 +64,7 @@ player.controllers.loginController =  function ($rootScope, $scope, $log, $locat
 player.controllers.logoutController =  function ($rootScope, $log, $navigate, authService) {
     $log.debug('logout called');
     authService.logout().then(function(){
+        $rootScope.$emit('logout');
         $rootScope.loginPage = true;
         $navigate.go('/login');
     });
@@ -127,9 +124,14 @@ player.controllers.inventoryController =  function($rootScope, $scope, $log, $na
         $log.debug('refreshInventory event received');
         $scope.refresh();
     });
+    $scope.$on("$destroy", function( event ) {
+            $scope.artifacts = [];
+        }
+    );
 };
 
 player.controllers.scannerController =  function($rootScope, $scope, $log, $timeout, apiService) {
+    var timer = $timeout(function(){}, 1);  // init timer with dumb noop
     function scan(){
         $log.debug('scanning nearby');
         apiService.nearby()
@@ -138,20 +140,25 @@ player.controllers.scannerController =  function($rootScope, $scope, $log, $time
             })['finally'](function(){
             timer = $timeout(scan, 5000);
         });
-    };
+    }
     $scope.$onRootScope('refreshScanner', function(){
         $log.debug('refreshScanner event received');
         $timeout.cancel(timer);
         scan();
     });
     $scope.refresh = scan;
-    // When the DOM element is removed
-    // cancel any pending timer.
-    $scope.$on("$destroy", function( event ) {
-            $timeout.cancel(timer);
-        }
-    );
-    var timer = $timeout(scan, 100);
+
+    var stopPolling = function (event) {
+        $scope.artifacts = [];
+        $timeout.cancel(timer);
+    };
+
+    $scope.$onRootScope('logout', stopPolling);
+    $scope.$on('$destroy', stopPolling);
+    $scope.$onRootScope('login', function(){
+        var timer = $timeout(scan, 100);
+    });
+
     $scope.toggleLeftNav = function(){
         $rootScope.leftNav = !$rootScope.leftNav;
     };
