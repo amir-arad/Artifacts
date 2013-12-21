@@ -49,6 +49,6 @@ module.exports = function (app, config, passport, authorizeFallback){
             return checkUserType(req, "player") && checkUserGame(req) &&
                 req.user.playerName &&
                 (req.player && req.user.playerName === req.player.name ||
-                        req.artifact && req.user.playerName === req.artifact.player);
+                        req.artifact && req.user.playerName === req.artifact.owner);
         }, this.storyteller.authorize);
 };

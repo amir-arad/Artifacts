@@ -31,6 +31,7 @@ module.exports = function (app, config){
     function validateGameAndName(game, player){
         if (!game || !game._id) return new Error('Must specify game id');
         if (!player || !player.name) return new Error('Must specify player name');
+        if (player.name === 'everywhere') return callback(new Error('Player name "everywhere" is illegal'));
         return null;
     }
 

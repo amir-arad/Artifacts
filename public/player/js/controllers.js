@@ -7,7 +7,7 @@ angular.module('player.controllers', ['angular-carousel'])
         // register listener to watch route changes
         $rootScope.$on( "$routeChangeStart", function(event, next, current) {
             if (next.templateUrl !== undefined) {
-                $rootScope.loginPage = next.templateUrl == 'view/login.html';
+                $rootScope.loginPage = next.templateUrl === 'view/login.html';
                 authService.isLoggedIn().then(function(isLoggedIn){
                     if ((isLoggedIn? true : false) === $rootScope.loginPage) {
                         // needs a redirection

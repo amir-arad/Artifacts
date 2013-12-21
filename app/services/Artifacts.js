@@ -14,11 +14,11 @@ module.exports = function (app, config){
      */
     var dao = new (require('../dal/Dao'))(app, {
         'collectionName':'artifacts',
-        'listFields':['name', 'location', 'player', 'icon'],
+        'listFields':['name', 'location', 'owner', 'icon'],
         // index by game + location (the most common query in the system)
-        'index':{'game' : 1, 'player': 1, 'location' : '2dsphere'}
+        'index':{'game' : 1, 'owner': 1, 'location' : '2dsphere'}
     });
-    var attributes = ['name', 'location', 'description', 'player', 'body', 'icon', 'images'];
+    var attributes = ['name', 'location', 'description', 'owner', 'body', 'icon', 'images'];
     var mutableAttributes = _.without(attributes, 'name');
 
     function id(game, name){
@@ -36,13 +36,16 @@ module.exports = function (app, config){
         });
     };
 
-    function validatePlayerOrLocation(game, artifact){
-        if (artifact.player) {
+    function validateOwnerOrLocation(game, artifact){
+        if (artifact.owner) {
             delete artifact.location;
-            if (!game.players[artifact.player]) return new Error('Illegal player ' + artifact.player);
+            // TODO check super locations ('everywhere')
+            if (!game.players[artifact.owner] && artifact.owner !== 'everywhere'){
+                return new Error('Illegal owner ' + artifact.owner);
+            }
         } else {
-            delete artifact.player;
-            if (!artifact.location) return new Error('No player nor location ' + artifact);
+            delete artifact.owner;
+            if (!artifact.location) return new Error('No owner nor location ' + artifact);
         }
         return null;
     }
@@ -57,7 +60,7 @@ module.exports = function (app, config){
         artifact.game = game._id;
         artifact._id = id(game, artifact.name);
         // validation
-        var err = validatePlayerOrLocation(game, artifact);
+        var err = validateOwnerOrLocation(game, artifact);
         if (err) return callback(err);
         dao.insert(artifact, callback);
     };
@@ -73,7 +76,7 @@ module.exports = function (app, config){
         // validation
         app.services.games.game(newFields.game, function(err, game){
             if (err) return callback(err);
-            err = validatePlayerOrLocation(game, newFields);
+            err = validateOwnerOrLocation(game, newFields);
             if (err) return callback(err);
             // TODO BL to validate location
 
@@ -98,11 +101,11 @@ module.exports = function (app, config){
     };
 
     /**
-     * List of artifacts owned by a player
+     * List of artifacts by a owner
      */
-    this.listByPlayer = function(game, player, callback) {
+    this.listByPlayer = function(game, owner, callback) {
         if (!game || !game._id) return callback(new Error('No game id ' + game));
-        if (!player || !player.name) return callback(new Error('No player name ' + game));
-        dao.list({'game' : game._id, 'player' : player.name}, callback);
+        if (!owner || !owner.name) return callback(new Error('No owner name ' + game));
+        dao.list({'game' : game._id, 'owner' : owner.name}, callback);
     };
 };

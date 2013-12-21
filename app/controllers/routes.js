@@ -49,6 +49,9 @@ module.exports = function(app, config, passport) {
     app.param('artifactId', artifacts.artifact);
     app.get('/games/:gameId/artifacts', auth.storyteller.authorize, artifacts.listByGame);
     app.get('/games/:gameId/players/:playerId/artifacts', auth.player.authorize, artifacts.listByPlayer);
+    app.del('/games/:gameId/players/:playerId/artifacts/:artifactId', auth.player.authorize, artifacts.drop);
+    app.get('/games/:gameId/players/:playerId/nearby', auth.player.authorize, artifacts.nearby);
+    app.put('/games/:gameId/players/:playerId/nearby/:artifactId', auth.player.authorize, artifacts.pickup);
 
     // TODO get artifacts on ground by location + report location
 
