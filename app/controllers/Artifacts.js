@@ -71,21 +71,30 @@ module.exports = function (app, config){
      * Drop an item from the inventory
      */
     this.drop  = function(req, res, next) {
-
+        app.services.artifacts.give(req.game, req.player, req.artifact, 'everywhere', function(err, artifact) {
+            if (err) return next(err);
+            res.jsonp(artifact);
+        });
     }
 
     /**
      * Pick up an item from the nearby context
      */
     this.pickup  = function(req, res, next) {
-
+        app.services.artifacts.take(req.game, req.player, req.artifact, 'everywhere', function(err, artifact) {
+            if (err) return next(err);
+            res.jsonp(artifact);
+        });
     }
 
     /**
      * List of artifacts in the nearby context
      */
     this.nearby  = function(req, res, next) {
-
+        app.services.artifacts.listNearLocation(req.game, req.player.location, function(err, artifacts) {
+            if (err) return next(err);
+            res.jsonp(artifacts);
+        });
     }
 
     /**
@@ -102,7 +111,7 @@ module.exports = function (app, config){
      * List of artifacts in the inventory context
      */
     this.listByPlayer = function(req, res, next) {
-        app.services.artifacts.listByPlayer(req.game, req.player, function(err, artifacts) {
+        app.services.artifacts.listByOwner(req.game, req.player, function(err, artifacts) {
             if (err) return next(err);
             res.jsonp(artifacts);
         });

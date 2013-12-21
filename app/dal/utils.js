@@ -26,7 +26,7 @@ function formatListFields(listFields) {
 
 module.exports.formatListFields = formatListFields;
 
-    /**
+/**
  * format update argument
  */
 function formatUpdateFields(updateFields) {
@@ -54,7 +54,25 @@ module.exports.getListFunction = function getListFunction(listFields, collection
     }
 };
 
-module.exports.getSelectorById = function getSelectorById(options, id, wrapWithObj) {
+module.exports.query =  function query(options, query) {
+    if (typeof query === 'object'){
+        if (query instanceof ObjectId){
+            return module.exports.queryById(options, query, false);
+        } else {
+            var idCandidate = query[options.id];
+            if (idCandidate){
+                return module.exports.query(options, idCandidate);
+            } else {
+                // assuming it's a query
+                return query;
+            }
+        }
+    } else {
+        return module.exports.queryById(options, query, options.useObjectId !== false);
+    }
+};
+
+module.exports.queryById = function queryById(options, id, wrapWithObj) {
     var res = {};
     res[options.id] = (wrapWithObj ? module.exports.id(id) : id);
     return res;

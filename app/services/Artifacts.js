@@ -14,6 +14,7 @@ module.exports = function (app, config){
      */
     var dao = new (require('../dal/Dao'))(app, {
         'collectionName':'artifacts',
+        'useObjectId':false,
         'listFields':['name', 'location', 'owner', 'icon'],
         // index by game + location (the most common query in the system)
         'index':{'game' : 1, 'owner': 1, 'location' : '2dsphere'}
@@ -71,8 +72,6 @@ module.exports = function (app, config){
     this.update = function(artifact, newFields, callback) {
         if (!artifact || !artifact._id || !artifact.game) return callback(new Error('Corrupt artifact ' + artifact));
         newFields = _.defaults(_.pick(newFields, mutableAttributes), artifact);
-
-        // TODO deletes all fields except for ID!!!!
         // validation
         app.services.games.game(newFields.game, function(err, game){
             if (err) return callback(err);
@@ -82,6 +81,24 @@ module.exports = function (app, config){
 
             dao.updateFields(newFields, mutableAttributes, callback);
         });
+    };
+
+    this.give = function(game, from, artifact, to, callback) {
+
+        // TODO use update
+    };
+
+    this.take = function(game, to, artifact, from, callback) {
+        // TODO use update
+    };
+
+    /**
+     * List of artifacts near a location
+     * for now, simply query the everywhere context
+     */
+    this.listNearLocation = function(game, location, callback) {
+        // TODO add location query
+        return listByOwner(game, 'everywhere', callback);
     };
 
     /**
@@ -103,9 +120,11 @@ module.exports = function (app, config){
     /**
      * List of artifacts by a owner
      */
-    this.listByPlayer = function(game, owner, callback) {
+    this.listByOwner = function(game, owner, callback) {
         if (!game || !game._id) return callback(new Error('No game id ' + game));
-        if (!owner || !owner.name) return callback(new Error('No owner name ' + game));
-        dao.list({'game' : game._id, 'owner' : owner.name}, callback);
+        if (!owner) return callback(new Error('No owner ' + game));
+        var ownerName =  typeof owner === 'string' ? owner : owner.name;
+        if (!ownerName) return callback(new Error('No owner name ' + owner));
+        dao.list({'game' : game._id, 'owner' : ownerName}, callback);
     };
 };

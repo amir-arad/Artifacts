@@ -23,8 +23,8 @@ module.exports = function (app, options){
 
     this.id = utils.id;
 
-    this.getSelectorById = function(id, wrapWithObj) {
-        return utils.getSelectorById(options, id, wrapWithObj);
+    this.queryById = function(id) {
+        return utils.queryById(options, id, true);
     };
 
     // functionality will be added to the dao only after there is a collection
@@ -58,15 +58,7 @@ module.exports = function (app, options){
          * Load an entity by id or query
          */
         _this.load = function(query, callback){
-            if (typeof query === 'object'){
-                if (query instanceof ObjectId){
-                    collection.findOne(utils.getSelectorById(options, query, false),callback);
-                } else {
-                    collection.findOne(query, callback);
-                }
-            } else {
-                collection.findOne(utils.getSelectorById(options, query, true),callback);
-            }
+            return collection.findOne(utils.query(options, query),callback);
         };
 
         /**
@@ -84,7 +76,7 @@ module.exports = function (app, options){
          */
         // TODO delete
         _this.update = function(entity, callback){
-            var query = utils.getSelectorById(options, entity[options.id]);
+            var query = utils.query(options, entity);
             collection.update(query, entity, {'safe':true}, callback);
         };
 
@@ -95,7 +87,7 @@ module.exports = function (app, options){
             utils.removeField(fields, options.id);   // safety
             var update = utils.getUpdate(entity, fields);
             if (!_.size(update)) return callback(new Error('update called with no updatable fields'));
-            var query = utils.getSelectorById(options, entity[options.id]);
+            var query = utils.query(options, entity);
             var sort = [['_id', 'asc']];
             app.logger.debug("findAndModify : " + JSON.stringify(update));
             collection.findAndModify(query, sort, update, {'safe':true, 'new':true},
@@ -112,7 +104,7 @@ module.exports = function (app, options){
          * Delete an entity
          */
         _this.remove = function(entity, callback){
-            collection.remove(utils.getSelectorById(options, entity[options.id]), function(err) {
+            collection.remove(utils.query(options, entity), function(err) {
                 return callback(err, err? null : entity);
             });
         };

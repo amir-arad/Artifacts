@@ -27,7 +27,7 @@ module.exports = function (app, config){
      */
     function loadAssetByFileOrId(game, artifact, id, asFile, callback) {
         if (!game || !game._id) return callback(new Error('No game id ' + game));
-        var query = asFile ? {'filename' : id} : dao.getSelectorById(id, true);
+        var query = asFile ? {'filename' : id} : dao.queryById(id);
         query['metadata.game'] = game._id;
         if (artifact){
             if (!artifact._id) return callback(new Error('No artifact id ' + artifact));
