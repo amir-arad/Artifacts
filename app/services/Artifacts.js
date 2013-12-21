@@ -14,11 +14,11 @@ module.exports = function (app, config){
      */
     var dao = new (require('../dal/Dao'))(app, {
         'collectionName':'artifacts',
-        'listFields':['name', 'location', 'description', 'player', 'mainAsset', 'iconAsset'],
+        'listFields':['name', 'location', 'player', 'icon'],
         // index by game + location (the most common query in the system)
         'index':{'game' : 1, 'player': 1, 'location' : '2dsphere'}
     });
-    var attributes = ['name', 'location', 'description', 'player', 'mainAsset', 'iconAsset'];
+    var attributes = ['name', 'location', 'description', 'player', 'body', 'icon', 'images'];
     var mutableAttributes = _.without(attributes, 'name');
 
     function id(game, name){

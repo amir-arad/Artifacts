@@ -11,6 +11,7 @@ var fs = require('fs');
 
 var sampleGame = {
     name : 'sampleGame',
+    default : true,
     password : '1234',
     description : 'a sample game created automatically',
     players : {
@@ -19,10 +20,10 @@ var sampleGame = {
         zander : {name : 'zander', password : 'l33t!', description : 'zander is a new guy'},
     },
     artifacts : {
-        rock : {name : 'rock', description : 'a rock', player : 'alice', mainAsset : 'rock.jpg', iconAsset: 'rock.icon.jpg', assets : []},
-        paper : {name : 'paper', description : 'a piece of paper', player : 'bob', mainAsset : 'paper.jpg', iconAsset: 'paper.icon.jpg', assets : []},
-        scissors : {name : 'scissors', description : 'a pair of cissors', player : 'zander', mainAsset : 'scissors.jpg', iconAsset: 'scissors.icon.jpg', assets : []},
-        magnet : {name : 'magnet', description : 'a magnet', player : 'zander', mainAsset : 'magnet.jpg', iconAsset: 'magnet.icon.jpg', assets : []}
+        rock : {name : 'rock', description : 'a rock', player : 'alice', body : 'The rock feels hard and cold in your hand.', icon: 'rock.icon.jpg', assets : []},
+        paper : {name : 'paper', description : 'a piece of paper', player : 'bob', body : 'A wrinkled sheet of paper that may yet prove important...', icon: 'paper.icon.jpg', assets : []},
+        scissors : {name : 'scissors', description : 'a pair of cissors', player : 'zander', body : 'The scissors are sharp. Something about them seems wrong...', icon: 'scissors.icon.jpg', assets : []},
+        magnet : {name : 'magnet', description : 'a magnet', player : 'zander', body : 'The magnet can pick up heavy pieces of iron.', icon: 'magnet.icon.jpg', assets : []}
     }
 };
 
@@ -73,7 +74,7 @@ module.exports = function(app, config, callback) {
             async.apply(app.services.games.create, sampleGame.name, sampleGame.password),
             // add description
             function(game, cb){
-                app.services.games.update(game, {description : sampleGame.description}, cb);
+                app.services.games.update(game, {description : sampleGame.description, 'default' : sampleGame.default}, cb);
             },
             // add players
             function(game, cb){
@@ -85,7 +86,6 @@ module.exports = function(app, config, callback) {
                     });
             },
             // upload assets
-            // TODO add html
             function(game, cb){
                 fs.readdir( __dirname, function (err, files) {
                     uploadAssetsByType(files, game, '.jpg', 'image/jpeg', cb);

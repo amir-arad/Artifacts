@@ -25,6 +25,16 @@ module.exports = function (app, config){
     };
 
     /**
+     * Find game by id
+     */
+    this.defaultGameName = function(req, res, next) {
+        app.services.games.defaultGame(function(err, game){
+            if (err) return next(err);
+            req.game = game;
+            res.jsonp(game.name);
+        });
+    };
+    /**
      * Create a game
      */
     this.create = function(req, res, next) {

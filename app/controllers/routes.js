@@ -21,9 +21,11 @@ module.exports = function(app, config, passport) {
     app.post('/login', formData, auth.sysop.authenticate, silentOk);
     app.get('/login', formData, auth.sysop.getCredentials);
 
+
     var games = new (require('./Games'))(app, config);
     app.param('gameId', games.game);
-    app.get('/games', formData, auth.sysop.authorize, games.list);
+    app.get('/defaultGameName', games.defaultGameName);
+    app.get('/games', auth.sysop.authorize, games.list);
     app.post('/games', formData, auth.sysop.authorize, games.create);
 
     app.post('/games/:gameId/login', formData, auth.storyteller.authenticate, silentOk);

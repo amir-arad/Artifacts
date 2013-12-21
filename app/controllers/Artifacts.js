@@ -1,3 +1,9 @@
+
+/**
+ * Module dependencies.
+ */
+var _ = require('underscore');
+
 /**
  * Controller for the artifact entity lifecycle management.
  * User: amira
@@ -52,8 +58,13 @@ module.exports = function (app, config){
     /**
      * Show an artifact
      */
-    this.show = function(req, res) {
-        res.jsonp(req.artifact);
+    this.show = function(req, res, next) {
+        // add all its assets
+        app.services.assets.list(req.game, req.artifact, function(err, assets) {
+            if (err) return next(err);
+            req.artifact.assets = _.pluck(assets, 'filename');
+            res.jsonp(req.artifact);
+        });
     };
 
     /**

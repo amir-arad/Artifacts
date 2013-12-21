@@ -35,6 +35,18 @@ module.exports = function (app, config){
     };
 
     /**
+     * Find game by name, query, or game entity
+     */
+    this.defaultGame = function(callback) {
+        var query = {'default' : true};
+        dao.load(query, function(err, game) {
+            if (err) return callback(err);
+            if (!game) return callback(new app.errors.NotFound('Failed to find default game ' + query));
+            return callback(null, game);
+        });
+    };
+
+    /**
      * Create a game
      */
     this.create = function(name, password, callback) {
@@ -58,7 +70,7 @@ module.exports = function (app, config){
         newFields = _.clone(newFields);
         newFields._id = game._id;
 
-        dao.updateFields(newFields, ['name', 'password', 'description'], callback);
+        dao.updateFields(newFields, ['name', 'password', 'description', 'default'], callback);
     };
 
     /**
