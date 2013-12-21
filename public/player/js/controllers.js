@@ -1,8 +1,28 @@
 var player = player || {};
 player.controllers = {};
 
-angular.module('player.controllers', []).
-    controller(player.controllers);
+angular.module('player.controllers', ['angular-carousel'])
+    .controller(player.controllers)
+    .run( function($rootScope, $location, $navigate, authService) {
+        // register listener to watch route changes
+        $rootScope.$on( "$routeChangeStart", function(event, next, current) {
+            if (next.templateUrl !== undefined) {
+                $rootScope.loginPage = next.templateUrl == 'view/login.html';
+                authService.isLoggedIn().then(function(isLoggedIn){
+                    if ((!!isLoggedIn)  === $rootScope.loginPage) {
+                        // needs a redirection
+                        if (isLoggedIn){
+                            // redirect to inventory
+                            $navigate.go('/inventory');
+                        } else {
+                            // redirect to login
+                            $navigate.go('/login');
+                        }
+                    }
+                });
+            }
+        });
+    });
 
 /**
  * The login controller.
@@ -15,12 +35,12 @@ player.controllers.loginController =  function ($rootScope, $scope, $log, $locat
             $navigate.go('/inventory');
         });
     };
-    authService.isLoggedIn().then(function(isLoggedIn){
-        if ($location.path() == '/login' && isLoggedIn){
-            $rootScope.loginPage = false;
-            $navigate.go('/inventory');
-        }
-    });
+//    authService.isLoggedIn().then(function(isLoggedIn){
+//        if ($location.path() == '/login' && isLoggedIn){
+//            $rootScope.loginPage = false;
+//            $navigate.go('/inventory');
+//        }
+//    });
 };
 
 /**
@@ -35,16 +55,21 @@ player.controllers.logoutController =  function ($rootScope, $log, $navigate, au
 };
 
 
-
-player.controllers.headerController =  function ($rootScope, $scope, $location, $navigate, authService) {
+/**
+ * top toolbar controller
+ * @param $scope
+ * @param $location
+ * @param $navigate
+ */
+player.controllers.headerController =  function ($scope, $location, $navigate) {
     $scope.getClass = function(path) {
+        // seems to not be working so well
         if ($location.path().substr(1, path.length) == path) {
             return "active";
         } else {
             return "";
         }
     };
-    $rootScope.loginPage = $location.path() == '/login';
     $scope.navigate = function(path) {
         $navigate.go('/'+path);
     };
@@ -58,12 +83,6 @@ player.controllers.headerController =  function ($rootScope, $scope, $location, 
         "title": "Log out",
         "link": "logout"
     }];
-    authService.isLoggedIn().then(function(isLoggedIn){
-        if (!$rootScope.loginPage && !isLoggedIn){
-            $rootScope.loginPage = true;
-            $navigate.go('/login');
-        }
-    });
 };
 
 player.controllers.alertsController =  function($scope, alertService) {
@@ -73,7 +92,7 @@ player.controllers.alertsController =  function($scope, alertService) {
 };
 
 
-player.controllers.inventoryController =  function($scope, $log, apiService, inventory) {
+player.controllers.inventoryController =  function($scope, $log, $navigate, apiService, inventory) {
     $scope.title = 'You have';
     $scope.artifacts = inventory;
     $scope.refresh = function(){
@@ -81,6 +100,9 @@ player.controllers.inventoryController =  function($scope, $log, apiService, inv
         apiService.inventory().then(function(inventory){
             $scope.artifacts = inventory;
         });
+    };
+    $scope.examine = function(artifactName){
+        $navigate.go('/artifact/'+artifactName);
     };
 };
 
@@ -96,6 +118,10 @@ player.controllers.nearbyController =  function($scope, $log, apiService, nearby
 };
 
 
-player.controllers.artifact =  function($scope, $log, artifact) {
+player.controllers.artifactController =  function($scope, $log, $navigate, artifact) {
+    $log.debug('inspecting artifact', artifact.name);
     $scope.artifact = artifact;
+    $scope.inventory = function(){
+        $navigate.go('/inventory');
+    }
 };

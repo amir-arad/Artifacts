@@ -1,0 +1,18 @@
+<article id="artifact" class="component">
+    <header class="artifact-list-row">
+        <h2 class="fa-2x center three-quarters">
+            {{artifact.name}}
+        </h2>
+        <div class="center quarter">
+            <button class="topcoat-icon-button" ng-click="inventory()">
+                <span class="topcoat-icon fa fa-suitcase"></span>
+            </button>
+        </div>
+    </header>
+    </br>
+    <div ng-bind-html="artifact.body"></div>
+    </br>
+    <ul rn-carousel rn-carousel-indicator rn-carousel-cycle class="rtfct-carousel">
+        <li ng-repeat="image in artifact.images" style="background-image:url({{image}});">
+    </ul>
+</article>

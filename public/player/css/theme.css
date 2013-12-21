@@ -4,12 +4,68 @@
         overflow: visible !important;
     }
 }
-/* Override some defaults */
-html, body {
-    background-color: #eee;
+/* #Media by height
+================================================== */
+@media only screen and (max-height: 220px) {
+    .rtfct-carousel {
+        height: 96px;
+    }
 }
-
-
+@media only screen and (min-height: 221px) and (max-height: 320px) {
+    .rtfct-carousel {
+        height: 170px;
+    }
+}
+@media only screen and (min-height: 321px) and (max-height: 480px) {
+    .rtfct-carousel {
+        height: 270px;
+    }
+}
+@media only screen and (min-height: 481px) and (max-height: 640px) {
+    .rtfct-carousel {
+        height: 380px;
+    }
+}
+@media only screen and (min-height: 641px) and (max-height: 800px) {
+    .rtfct-carousel {
+        height: 540px;
+    }
+}
+@media only screen and (min-height: 801px) {
+    .rtfct-carousel {
+        height: 700px;
+    }
+}
+.rtfct-carousel li {
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-position: center center;
+}
+/* Override some defaults */
+html,body{
+    margin:0;
+    padding:0;
+    height: 100%;
+}
+body {
+    font-family: source-sans-pro, sans-serif;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+}
+body.light {
+    background: #F4F4F4;
+    color: #181919;
+}
+body.dark {
+    color: #F0F1F1;
+    background: #4A4D4E;
+}
+body.light #content header:before {
+    border-bottom: 1px solid #E0E0E0;
+}
+body.dark #content header:before {
+    border-bottom: 1px solid #58595A;
+}
 .artifact-list-row{
     display: table;
     width: 100%;
@@ -85,3 +141,24 @@ legend {
     font-weight: bold;
     color: #404040;
 }
+
+/*.iframe-wrapper{*/
+    /*width:100%;*/
+    /*height:100%;*/
+    /*margin:0 auto;*/
+/*}*/
+/*.iframe-container {*/
+    /*position:relative;*/
+/*}*/
+/*.iframe-container img {*/
+    /*display:block;*/
+    /*width:100%;*/
+    /*height:auto;*/
+/*}*/
+/*.iframe-container iframe {*/
+    /*position:absolute;*/
+    /*top:0;*/
+    /*left:0;*/
+    /*width:100%;*/
+    /*height:100%;*/
+/*}*/

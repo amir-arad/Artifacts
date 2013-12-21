@@ -12,5 +12,5 @@
         "fileSizeLimit" : 17000000,
         "contentTypeFilter" : "^image\/.*$"
     },
-    "bootstrapSampleGame" : "no-force"
+    "bootstrapSampleGame" : "force"
 }

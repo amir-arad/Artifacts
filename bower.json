@@ -3,8 +3,10 @@
     "description": "Artifacts - live games solutions system",
     "version": "0.1.0",
     "dependencies": {
+        "angular-carousel" : "git://github.com/revolunet/angular-carousel",
         "font-awesome" : "latest",
         "topcoat" : "latest",
+        "angular-sanitize" : "latest",
         "angular-local-storage" : "latest",
         "angular-mobile-nav": "latest",
         "restangular": "latest",

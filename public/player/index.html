@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>Artifacts</title>
     <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+    <link rel="stylesheet" href="/lib/angular-carousel/src/css/angular-carousel.css" media="screen">
     <link href="/img/icons/favicon.ico" rel="shortcut icon" type="image/x-icon">
     <!-- http://stackoverflow.com/questions/1598899/unload-css-from-webpage -->
     <link rel="stylesheet" href="/lib/topcoat/css/topcoat-mobile-dark.css" media="screen">
@@ -20,21 +21,22 @@
 
     <!--  <link rel="stylesheet" href="/css/common.css">-->
 </head>
-<body ng-app="player">
+<body class="dark" ng-app="player">
 
-<div  data-ng-controller="headerController">
-    <div data-ng-include="'view/header.html'" data-role="navigation"  ng-hide="loginPage"></div>
-</div>
+<!--<div  data-ng-controller="headerController">-->
+    <!--<div data-ng-include="'view/header.html'" data-role="navigation"  ng-hide="loginPage"></div>-->
+<!--</div>-->
 <div ng-controller="alertsController">
     <alert ng-repeat="alert in alerts" type="alert.type" close="closeAlert($index)">{{alert.msg}}</alert>
 </div>
 
-<div data-ng-view></div>
+<div id="content" data-ng-view class="max-width"></div>
 
 
 <!--AngularJS-->
 <script type="text/javascript" src="/lib/lodash/dist/lodash.js"></script>
 <script type="text/javascript" src="/lib/angular/angular.js"></script>
+<script type="text/javascript" src="/lib/angular-sanitize/angular-sanitize.js"></script>
 <script type="text/javascript" src="/lib/angular-local-storage/angular-local-storage.js"></script>
 <script type="text/javascript" src="/lib/angular-animate/angular-animate.js"></script>
 <script type="text/javascript" src="/lib/angular-mobile-nav/mobile-nav.js"></script>
@@ -42,6 +44,8 @@
 <script type="text/javascript" src="/lib/angular-cookies/angular-cookies.js"></script>
 <script type="text/javascript" src="/lib/restangular/src/restangular.js"></script>
 <script type="text/javascript" src="/lib/angular-http-auth/src/http-auth-interceptor.js" ></script>
+<script type="text/javascript" src="/lib/angular-carousel/lib/angular-mobile.js"></script>
+<script type="text/javascript" src="/lib/angular-carousel/dist/angular-carousel.js"></script>
 <!--<script type="text/javascript" src="/lib/angular-resource/angular-resource.js"></script>-->
 <!--Angular UI-->
 <script type="text/javascript" src="/lib/angular-bootstrap/ui-bootstrap-tpls.js"></script>

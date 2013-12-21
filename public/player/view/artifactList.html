@@ -1,16 +1,16 @@
 <div class="topcoat-list list">
-    <div class="topcoat-list__header ">
-        <div class="artifact-list-row ">
-            <div class="fa-2x left three-quarters">
-                {{title}}
-            </div>
-            <div class="right quarter">
-                <button class="topcoat-icon-button" ng-click="refresh()">
-                    <span class="topcoat-icon fa fa-2x fa-refresh"></span>
-                </button>
-            </div>
-        </div>
-    </div>
+    <!--<div class="topcoat-list__header ">-->
+        <!--<div class="artifact-list-row ">-->
+            <!--<div class="fa-2x left three-quarters">-->
+                <!--{{title}}-->
+            <!--</div>-->
+            <!--<div class="right quarter">-->
+                <!--<button class="topcoat-icon-button" ng-click="refresh()">-->
+                    <!--<span class="topcoat-icon fa fa-2x fa-refresh"></span>-->
+                <!--</button>-->
+            <!--</div>-->
+        <!--</div>-->
+    <!--</div>-->
     <ul class="topcoat-list__container">
             <li ng-repeat="artifact in artifacts" class="topcoat-list__item">
                 <div class="artifact-list-row left"  ng-click="examine(artifact.name)">

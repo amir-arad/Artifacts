@@ -40,6 +40,20 @@ player.services.apiService = function ($log, Restangular, _, localStorageService
         //      /games/:gameId/artifacts/:artifactId
         return baseGame.one('artifacts', artifactId);
     }
+    function enrichArtifactFromApi(artifact) {
+        function relativeUrl(relative){
+            return baseArtifact(artifact.name).one(relative).getRestangularUrl();
+        }
+        $log.debug('artifact', artifact.name);
+        artifact.iconUrl = relativeUrl(artifact.icon);
+        artifact.images =
+            _.chain(artifact.assets)
+                .filter(function(asset){return asset !== artifact.icon;})
+                .map(relativeUrl)
+                .value();
+        return artifact;
+    }
+
     var service = {
         init : function initApiService (gameId, playerId) {
             $log.debug('context detected', gameId, playerId);
@@ -67,15 +81,12 @@ player.services.apiService = function ($log, Restangular, _, localStorageService
             // https://github.com/mgonto/restangular#adding-custom-methods-to-collections
             // get /games/:gameId/players/:playerId/artifacts
             return basePlayer.one('artifacts').getList().then(function(artifacts){
-                return _.forEach(artifacts, function enrichArtifactFromApi(artifact) {
-                    $log.debug('artifact', artifact.name);
-                    artifact.iconUrl = baseArtifact(artifact.name).one(artifact.iconAsset).getRestangularUrl();
-                });
+                return _.forEach(artifacts, enrichArtifactFromApi);
             });
         },
         examine: function examineFromApi(artifactId) {
             // get /games/:gameId/artifacts/:artifactId
-            return baseArtifact(artifactId).get();
+            return baseArtifact(artifactId).get().then(enrichArtifactFromApi);
         }
     };
     service.init(localStorageService.get('gameId'), localStorageService.get('playerId'));
@@ -92,7 +103,7 @@ if (Error.captureStackTrace){  // only works in chrome
             Error.prepareStackTrace = function(_, stack) {
                 return stack;
             };
-            var err = new Error;
+            var err = new Error();
             Error.captureStackTrace(err, Function.caller);
             var stack = err.stack;
             Error.prepareStackTrace = orig;
