@@ -1,26 +1,28 @@
 <div class="topcoat-list list">
-    <!--<div class="topcoat-list__header ">-->
-        <!--<div class="artifact-list-row ">-->
-            <!--<div class="fa-2x left three-quarters">-->
-                <!--{{title}}-->
-            <!--</div>-->
-            <!--<div class="right quarter">-->
-                <!--<button class="topcoat-icon-button" ng-click="refresh()">-->
-                    <!--<span class="topcoat-icon fa fa-2x fa-refresh"></span>-->
-                <!--</button>-->
-            <!--</div>-->
-        <!--</div>-->
-    <!--</div>-->
+    <!--Notification in case the list is empty-->
+    <div class="topcoat-list__header" data-ng-hide="artifacts.length">
+        <div class="artifact-list-row ">
+            <header >
+                <h1  class="fa-2x left">Nothing to show</h1>
+            </header>
+            <div class="right quarter">
+                <button class="topcoat-icon-button" ng-click="refresh()">
+                    <span class="topcoat-icon fa fa-2x fa-refresh"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!--the list-->
     <ul class="topcoat-list__container">
-            <li ng-repeat="artifact in artifacts" class="topcoat-list__item">
-                <div class="artifact-list-row left"  ng-click="examine(artifact.name)">
+        <li ng-repeat="artifact in artifacts" class="topcoat-list__item">
+            <div class="artifact-list-row left"  ng-click="examine(artifact.name)">
                 <div class="artifact-icon quarter">
                     <img class="img-rounded" ng-src="{{artifact.iconUrl}}">
                 </div>
                 <div class="fa-2x list__item left three-quarters">
                     {{artifact.name}}
                 </div>
-                </div>
-            </li>
+            </div>
+        </li>
     </ul>
 </div>

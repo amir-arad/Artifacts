@@ -118,10 +118,15 @@ player.controllers.nearbyController =  function($scope, $log, apiService, nearby
 };
 
 
-player.controllers.artifactController =  function($scope, $log, $navigate, artifact) {
+player.controllers.artifactController =  function($scope, $log, $navigate, apiService, artifact) {
     $log.debug('inspecting artifact', artifact.name);
     $scope.artifact = artifact;
     $scope.inventory = function(){
         $navigate.go('/inventory');
+    };
+    $scope.drop = function(){
+        apiService.drop(artifact.name).then(function(){
+            $navigate.go('/inventory');
+        });
     };
 };

@@ -1,11 +1,33 @@
+<div data-ng-show="dropAlert">
+    <div class="topcoat-overlay-bg"></div>
+    <aside class="topcoat-overlay">
+        <header >
+            <h1 class="topcoat-overlay__title">Really drop {{artifact.name}}?</h1>
+        </header>
+        <article class="artifact-list-row">
+            <div class="center half">
+                <button type="button" class="topcoat-button" ng-click="drop()">Drop {{artifact.name}}!</button>
+            </div>
+            <div class="center half">
+                <button type="button" class="topcoat-button--cta" ng-click="dropAlert = false">Oops!</button>
+            </div>
+        </article>
+    </aside>
+</div>
+
 <article id="artifact" class="component">
     <header class="artifact-list-row">
-        <h2 class="fa-2x center three-quarters">
+        <div class="center quarter">
+            <button class="topcoat-icon-button" ng-click="inventory()">
+                <span class="topcoat-icon fa fa-dropbox fa-btn"></span>    <!--fa-suitcase-->
+            </button>
+        </div>
+        <h2 class="fa-2x center half">
             {{artifact.name}}
         </h2>
         <div class="center quarter">
-            <button class="topcoat-icon-button" ng-click="inventory()">
-                <span class="topcoat-icon fa fa-suitcase"></span>
+            <button class="topcoat-icon-button" ng-click="dropAlert = true">
+                <span class="topcoat-icon fa fa-download fa-btn"></span>
             </button>
         </div>
     </header>

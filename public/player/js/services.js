@@ -41,6 +41,7 @@ player.services.apiService = function ($log, Restangular, _, localStorageService
         return baseGame.one('artifacts', artifactId);
     }
     function enrichArtifactFromApi(artifact) {
+        // https://github.com/mgonto/restangular#adding-custom-methods-to-collections
         function relativeUrl(relative){
             return baseArtifact(artifact.name).one(relative).getRestangularUrl();
         }
@@ -78,15 +79,26 @@ player.services.apiService = function ($log, Restangular, _, localStorageService
             return Restangular.one('logout').post();
         },
         inventory: function inventoryFromApi() {
-            // https://github.com/mgonto/restangular#adding-custom-methods-to-collections
             // get /games/:gameId/players/:playerId/artifacts
             return basePlayer.one('artifacts').getList().then(function(artifacts){
                 return _.forEach(artifacts, enrichArtifactFromApi);
             });
         },
+        nearby: function nearbyFromApi() {
+            // get /games/:gameId/players/:playerId/nearby
+            return basePlayer.one('nearby').getList();
+        },
         examine: function examineFromApi(artifactId) {
             // get /games/:gameId/artifacts/:artifactId
             return baseArtifact(artifactId).get().then(enrichArtifactFromApi);
+        },
+        drop: function dropFromApi(artifactId){
+            // del /games/:gameId/players/:playerId/artifacts/:artifactId
+            return basePlayer.one('artifacts', artifactId).remove();
+        },
+        pickup: function pickupFromApi(artifactId) {
+            // put /games/:gameId/players/:playerId/nearby/:artifactId with no body
+            return basePlayer.one('nearby', artifactId).customPUT();
         }
     };
     service.init(localStorageService.get('gameId'), localStorageService.get('playerId'));
