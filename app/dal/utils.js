@@ -54,21 +54,21 @@ module.exports.getListFunction = function getListFunction(listFields, collection
     }
 };
 
-module.exports.query =  function query(options, query) {
-    if (typeof query === 'object'){
-        if (query instanceof ObjectId){
-            return module.exports.queryById(options, query, false);
+module.exports.query =  function query(options, queryArg) {
+    if (typeof queryArg === 'object'){
+        if (queryArg instanceof ObjectId){
+            return module.exports.queryById(options, queryArg, false);
         } else {
-            var idCandidate = query[options.id];
+            var idCandidate = queryArg[options.id];
             if (idCandidate){
                 return module.exports.query(options, idCandidate);
             } else {
                 // assuming it's a query
-                return query;
+                return queryArg;
             }
         }
     } else {
-        return module.exports.queryById(options, query, options.useObjectId !== false);
+        return module.exports.queryById(options, queryArg, options.useObjectId !== false);
     }
 };
 

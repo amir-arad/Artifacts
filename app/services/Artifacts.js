@@ -21,6 +21,7 @@ module.exports = function (app, config){
     });
     var attributes = ['name', 'location', 'description', 'owner', 'body', 'icon', 'images'];
     var mutableAttributes = _.without(attributes, 'name');
+    var _this = this;
 
     function id(game, name){
         return game._id.toHexString() + '-' + name.toLowerCase();
@@ -83,13 +84,23 @@ module.exports = function (app, config){
         });
     };
 
-    this.give = function(game, from, artifact, to, callback) {
+    function transfer(game, src, artifact, dst, callback){
+        if (!artifact || !artifact._id || !artifact.game) return callback(new Error('Corrupt artifact ' + artifact));
+        if (artifact.owner === dst) return callback(null, artifact);   // meaningless action, no need for noise
+        if (artifact.owner !== src) return callback(new Error('Artifact '+artifact.name+' does not belong to ' + src));
 
-        // TODO use update
+        dao.selectAndUpdateFields({_id:artifact._id, game:game._id, owner:src}, {owner:dst}, ['owner'], callback);
+    }
+
+    this.give = function(game, from, artifact, to, callback) {
+        if ('everywhere' !== to) return callback(new Error('Artifact '+artifact.name+' cannot be given to ' + to));
+        // TODO add location query, should be ok to give to nearby players
+        return transfer(game, from, artifact, to, callback);
     };
 
     this.take = function(game, to, artifact, from, callback) {
-        // TODO use update
+        if ('everywhere' !== from) return callback(new Error('Artifact '+artifact.name+' cannot be taken from ' + from));
+        return transfer(game, from, artifact, to, callback);
     };
 
     /**
@@ -98,7 +109,7 @@ module.exports = function (app, config){
      */
     this.listNearLocation = function(game, location, callback) {
         // TODO add location query
-        return listByOwner(game, 'everywhere', callback);
+        return _this.listByOwner(game, 'everywhere', callback);
     };
 
     /**

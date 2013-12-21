@@ -71,21 +71,21 @@ module.exports = function (app, config){
      * Drop an item from the inventory
      */
     this.drop  = function(req, res, next) {
-        app.services.artifacts.give(req.game, req.player, req.artifact, 'everywhere', function(err, artifact) {
+        app.services.artifacts.give(req.game, req.player.name, req.artifact, 'everywhere', function(err, artifact) {
             if (err) return next(err);
             res.jsonp(artifact);
         });
-    }
+    };
 
     /**
      * Pick up an item from the nearby context
      */
     this.pickup  = function(req, res, next) {
-        app.services.artifacts.take(req.game, req.player, req.artifact, 'everywhere', function(err, artifact) {
+        app.services.artifacts.take(req.game, req.player.name, req.artifact, 'everywhere', function(err, artifact) {
             if (err) return next(err);
             res.jsonp(artifact);
         });
-    }
+    };
 
     /**
      * List of artifacts in the nearby context
@@ -95,7 +95,7 @@ module.exports = function (app, config){
             if (err) return next(err);
             res.jsonp(artifacts);
         });
-    }
+    };
 
     /**
      * List of artifacts in a game context

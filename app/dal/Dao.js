@@ -71,23 +71,13 @@ module.exports = function (app, options){
         };
 
         /**
-         * Update an entity
-         * @deprecated  use only updateFields
+         * Update fields of an entity based on a selector
          */
-        // TODO delete
-        _this.update = function(entity, callback){
-            var query = utils.query(options, entity);
-            collection.update(query, entity, {'safe':true}, callback);
-        };
-
-        /**
-         * Update fields in an entity
-         */
-        _this.updateFields = function(entity, fields, callback){
+        _this.selectAndUpdateFields = function(query, values, fields, callback){
+            query = utils.query(options, query);
             utils.removeField(fields, options.id);   // safety
-            var update = utils.getUpdate(entity, fields);
+            var update = utils.getUpdate(values, fields);
             if (!_.size(update)) return callback(new Error('update called with no updatable fields'));
-            var query = utils.query(options, entity);
             var sort = [['_id', 'asc']];
             app.logger.debug("findAndModify : " + JSON.stringify(update));
             collection.findAndModify(query, sort, update, {'safe':true, 'new':true},
@@ -98,6 +88,14 @@ module.exports = function (app, options){
                     app.logger.debug("result : " + JSON.stringify(details));
                     return callback(err, entity);
                 });
+        };
+
+        /**
+         * Update fields in an entity
+         * @param entity is used both for query and for values
+         */
+        _this.updateFields = function(entity, fields, callback){
+            return _this.selectAndUpdateFields(entity, entity, fields, callback);
         };
 
         /**
