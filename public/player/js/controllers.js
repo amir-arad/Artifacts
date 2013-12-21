@@ -9,7 +9,7 @@ angular.module('player.controllers', ['angular-carousel'])
             if (next.templateUrl !== undefined) {
                 $rootScope.loginPage = next.templateUrl == 'view/login.html';
                 authService.isLoggedIn().then(function(isLoggedIn){
-                    if ((!!isLoggedIn)  === $rootScope.loginPage) {
+                    if ((isLoggedIn? true : false) === $rootScope.loginPage) {
                         // needs a redirection
                         if (isLoggedIn){
                             // redirect to inventory
@@ -123,5 +123,5 @@ player.controllers.artifactController =  function($scope, $log, $navigate, artif
     $scope.artifact = artifact;
     $scope.inventory = function(){
         $navigate.go('/inventory');
-    }
+    };
 };
