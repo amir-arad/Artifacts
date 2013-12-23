@@ -93,6 +93,21 @@ body.light #content header:before {
 body.dark #content header:before {
     border-bottom: 1px solid #58595A;
 }
+
+.alertsContainer{
+    z-index: 20;
+}
+
+.alertsContainer div{
+    color: #b94a48;
+    background-color: #f2dede;
+    border-color: #eed3d7;
+    border: 1px solid #fbeed5;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+}
+
 .artifact-list-row{
     display: table;
     width: 100%;
