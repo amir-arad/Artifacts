@@ -1,0 +1,25 @@
+
+<!--The scanner button-->
+<button class="topcoat-icon-button scanner alert" ng-click="toggleLeftNav()" ng-class="{notify: artifacts.length}">
+    <div class="earth">
+        <h1 class="topcoat-overlay__title fa-3x" data-ng-show="artifacts.length">{{artifacts.length}}</h1>
+    </div>
+</button>
+
+<nav class="side-nav">
+    <div class="topcoat-list__container side-nav__list__container">
+        <!--Notification in case the list is empty-->
+        <div class="topcoat-list__header" data-ng-hide="artifacts.length">
+            <header >
+                <h1 class="left">Nothing to show</h1>
+            </header>
+        </div>
+        <ul class="topcoat-list side-nav__list">
+            <li ng-repeat="artifact in artifacts" class="topcoat-list__item side-nav__list__item notify">
+                <div class="artifact-list-row fa-2x left" ng-click="pickup(artifact.name)">
+                        <div class="three-quarters">{{artifact.name}}</div><span class="fa fa-upload quarter left "></span>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>

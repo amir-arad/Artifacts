@@ -1,0 +1,33 @@
+<div class="topcoat-list list">
+    <div class="topcoat-list__header"  ng-click="inventory = false;">
+        <div class="fa-2x ">
+            Player - {{player.name}}
+        </div>
+    </div>
+    <form  data-ng-hide="inventory">
+        <ul class="topcoat-list__container center">
+            <li class="topcoat-list__item">
+                <input type="text" class="topcoat-text-input" placeholder="name" ng-model="player.name" />
+            </li>
+            <li class="topcoat-list__item">
+                <input type="text" class="topcoat-text-input" placeholder="password" ng-model="player.password" />
+            </li>
+            <li class="topcoat-list__item">
+                <textarea class="topcoat-textarea" rows="4" cols="36" placeholder="internal notes" ng-model="player.description"></textarea>
+            </li>
+            <li class="topcoat-list__item">
+                <div class="artifact-list-row left"  ng-click="examine(artifact.name)">
+                    <div class="fa-2x list__item center half">
+                        <button type="submit" class="topcoat-button--cta" ng-click="save()">Save</button>
+                    </div>
+                    <div class="fa-2x list__item center half">
+                        <button type="button" class="topcoat-button" ng-click="inventory = true;">Inventory</button>
+                    </div>
+                </div>
+            </li>
+        </ul>
+    </form>
+    <div data-ng-show="inventory">
+        <div data-ng-include="'view/artifactList.html'"></div>
+    </div>
+</div>

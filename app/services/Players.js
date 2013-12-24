@@ -10,6 +10,7 @@
  */
 
 var _ = require('underscore');
+var async = require('async');
 var util = require('util');
 
 module.exports = function (app, config){
@@ -77,22 +78,33 @@ module.exports = function (app, config){
     };
 
     /**
-     * Delete an game
+     * Delete an player
      */
     this.destroy = function(game, player, callback) {
         // validation
         var err = validateGameAndName(game, player);
         if (err) return callback(err);
 
-        // the deletion itself
-        delete game.players[player.name];      // just in case
-        var fields = {};
-        fields['players.' + player.name] = '$unset';
-        dao.updateFields(game, fields, wrapCallback(player, callback));
+        // reallocate any artifacts
+        app.services.artifacts.listByOwner(game, player, function(err, artifacts) {
+            if (err) return next(err);
+            async.each(artifacts, function(artifact, cb){
+                    artifact.game = game._id;      // hack because dao.list filters game field out
+                    app.services.artifacts.transfer(game, player.name, artifact, 'everywhere', cb);
+                },
+                function (err) {
+                    if (err) return callback(err);
+                    // the deletion itself
+                    delete game.players[player.name];      // just in case
+                    var fields = {};
+                    fields['players.' + player.name] = '$unset';
+                    dao.updateFields(game, fields, wrapCallback(player, callback));
+                });
+        });
     };
 
     /**
-     * List of games
+     * List of players
      */
     this.list = function(game, callback) {
         if (!game || !game.players) return callback(new Error('Corrupted game'));

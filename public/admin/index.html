@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html ng-app="admin" lang="en" xmlns="http://www.w3.org/1999/xhtml" itemscope="itemscope" itemtype="http://schema.org/Product">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0, maximum-scale=1">
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+    <title>Artifacts</title>
+    <link rel="stylesheet" href="/lib/angular-carousel/src/css/angular-carousel.css" media="screen">
+    <link href="/img/icons/favicon.ico" rel="shortcut icon" type="image/x-icon">
+    <!-- http://stackoverflow.com/questions/1598899/unload-css-from-webpage -->
+    <link rel="stylesheet" href="/lib/topcoat/css/topcoat-mobile-dark.css" media="screen">
+    <!-- http://getbootstrap.com/2.3.2/base-css.html -->
+    <link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.css" media="screen">
+    <!--<link rel="stylesheet" href="/lib/bootstrap/docs/assets/css/bootstrap.css" media="screen">-->
+    <!--<link rel="stylesheet" href="/lib/bootstrap/docs/assets/css/bootstrap-responsive.css" media="screen">-->
+    <!--<link rel="stylesheet" href="/lib/bootstrap/docs/assets/css/docs.css" media="screen">-->
+    <link rel="stylesheet" href="/lib/angular-mobile-nav/mobile-nav.css" media="screen">
+    <link rel="stylesheet" href="css/theme.css" media="screen">
+
+    <!--  <link rel="stylesheet" href="/css/common.css">-->
+</head>
+<body class="dark"  ng-class="{leftNav: leftNav}">
+<div data-ng-controller="headerController">
+    <div data-ng-include="'view/header.html'" data-role="navigation"  ng-hide="loginPage"></div>
+</div>
+
+<div ng-controller="alertsController" class="alertsContainer">
+    <div ng-repeat="alert in alerts" data-ng-click="closeAlert($index)">{{alert.msg}}</div>
+</div>
+
+<div id="content" data-ng-view class="max-width"></div>
+
+
+<!--AngularJS-->
+<script type="text/javascript" src="/lib/lodash/dist/lodash.js"></script>
+<script type="text/javascript" src="/lib/angular/angular.js"></script>
+<script type="text/javascript" src="/lib/angular-sanitize/angular-sanitize.js"></script>
+<script type="text/javascript" src="/lib/angular-local-storage/angular-local-storage.js"></script>
+<script type="text/javascript" src="/lib/angular-animate/angular-animate.js"></script>
+<script type="text/javascript" src="/lib/angular-mobile-nav/mobile-nav.js"></script>
+<script type="text/javascript" src="/lib/angular-route/angular-route.js"></script>
+<script type="text/javascript" src="/lib/angular-cookies/angular-cookies.js"></script>
+<script type="text/javascript" src="/lib/restangular/src/restangular.js"></script>
+<script type="text/javascript" src="/lib/angular-http-auth/src/http-auth-interceptor.js" ></script>
+<script type="text/javascript" src="/lib/angular-carousel/lib/angular-mobile.js"></script>
+<script type="text/javascript" src="/lib/angular-carousel/dist/angular-carousel.js"></script>
+<!--<script type="text/javascript" src="/lib/angular-resource/angular-resource.js"></script>-->
+<!--Angular UI-->
+<!--Application-->
+<script type="text/javascript" src="/admin/js/app.js"></script>
+<script type="text/javascript" src="/admin/js/controllers.js"></script>
+<script type="text/javascript" src="/admin/js/directives.js"></script>
+<script type="text/javascript" src="/admin/js/filters.js"></script>
+<script type="text/javascript" src="/admin/js/services.js"></script>
+</body>
+</html>

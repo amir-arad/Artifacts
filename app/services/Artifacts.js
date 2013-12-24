@@ -84,7 +84,7 @@ module.exports = function (app, config){
         });
     };
 
-    function transfer(game, src, artifact, dst, callback){
+    this.transfer = function(game, src, artifact, dst, callback){
         if (!artifact || !artifact._id || !artifact.game) return callback(new Error('Corrupt artifact ' + artifact));
         if (artifact.owner === dst) return callback(null, artifact);   // meaningless action, no need for noise
         if (artifact.owner !== src) return callback(new Error('Artifact '+artifact.name+' does not belong to ' + src));
@@ -95,12 +95,12 @@ module.exports = function (app, config){
     this.give = function(game, from, artifact, to, callback) {
         if ('everywhere' !== to) return callback(new Error('Artifact '+artifact.name+' cannot be given to ' + to));
         // TODO add location query, should be ok to give to nearby players
-        return transfer(game, from, artifact, to, callback);
+        return this.transfer(game, from, artifact, to, callback);
     };
 
     this.take = function(game, to, artifact, from, callback) {
         if ('everywhere' !== from) return callback(new Error('Artifact '+artifact.name+' cannot be taken from ' + from));
-        return transfer(game, from, artifact, to, callback);
+        return this.transfer(game, from, artifact, to, callback);
     };
 
     /**

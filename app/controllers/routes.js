@@ -8,7 +8,7 @@ module.exports = function(app, config, passport) {
     var auth = new (require('./authorization/Strategies'))(
         app, config, passport,
         function(req, res){           // fallback to auth error
-            res.setHeader('WWW-Authenticate', 'Basic realm="Artifacts"');
+         //   res.setHeader('WWW-Authenticate', 'Basic realm="Artifacts"');
             res.send(401, { "msg" : "error.no.credentials" });    // Unauthorized
         });
 

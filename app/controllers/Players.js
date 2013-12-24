@@ -17,6 +17,10 @@ module.exports = function (app, config){
      * Find player by id
      */
     this.player = function(req, res, next, playerName) {
+        if (playerName === 'everywhere'){
+            req.player = {name: playerName};
+            return next();
+        }
         app.services.players.player(req.game, playerName, function (err, player) {
             if (err) return next(err);
             req.player = player;

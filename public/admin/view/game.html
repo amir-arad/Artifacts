@@ -1,0 +1,23 @@
+<div class="topcoat-list list">
+    <div class="topcoat-list__header ">
+        <div class="fa-2x left ">
+            Game - {{game.name}}
+        </div>
+    </div>
+    <form>
+        <ul class="topcoat-list__container center">
+            <li class="topcoat-list__item">
+                <input type="text" class="topcoat-text-input" placeholder="name" ng-model="game.name" />
+            </li>
+            <li class="topcoat-list__item">
+                <input type="text" class="topcoat-text-input" placeholder="password" ng-model="game.password" />
+            </li>
+            <li class="topcoat-list__item">
+                <textarea class="topcoat-textarea" rows="4" cols="36" placeholder="internal notes"  ng-model="game.description"></textarea>
+            </li>
+            <li class="topcoat-list__item">
+                <button type="submit" class="topcoat-button--cta" ng-click="save()">Save</button>
+            </li>
+        </ul>
+    </form>
+</div>

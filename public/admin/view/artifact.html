@@ -1,0 +1,40 @@
+<div data-ng-show="dropAlert">
+    <div class="topcoat-overlay-bg"></div>
+    <aside class="topcoat-overlay">
+        <header >
+            <h1 class="topcoat-overlay__title">Really drop {{artifact.name}}?</h1>
+        </header>
+        <article class="artifact-list-row">
+            <div class="center half">
+                <button type="button" class="topcoat-button" ng-click="drop()">Drop {{artifact.name}}</button>
+            </div>
+            <div class="center half">
+                <button type="button" class="topcoat-button--cta" ng-click="dropAlert = false">Woops!</button>
+            </div>
+        </article>
+    </aside>
+</div>
+
+<article id="artifact" class="component">
+    <header class="artifact-list-row">
+        <div class="center quarter">
+            <button class="topcoat-icon-button" ng-click="inventory()">
+                <span class="topcoat-icon fa fa-list-ul fa-btn"></span>    <!--fa-suitcase-->
+            </button>
+        </div>
+        <h1 class="center half">
+            {{artifact.name}}
+        </h1>
+        <div class="center quarter">
+            <button class="topcoat-icon-button" ng-click="dropAlert = true">
+                <span class="topcoat-icon fa fa-download fa-btn"></span>
+            </button>
+        </div>
+    </header>
+    </br>
+    <div ng-bind-html="artifact.body"></div>
+    </br>
+    <ul rn-carousel rn-carousel-indicator rn-carousel-cycle class="rtfct-carousel">
+        <li ng-repeat="image in artifact.images" style="background-image:url({{image}});">
+    </ul>
+</article>

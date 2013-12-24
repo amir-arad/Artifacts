@@ -1,0 +1,36 @@
+<div class="topcoat-list list">
+    <!--Notification in case the list is empty-->
+    <div class="topcoat-list__header" data-ng-hide="playerList.length">
+        <div class="artifact-list-row ">
+            <header >
+                <h1  class="fa-2x left">Nothing to show</h1>
+            </header>
+            <div class="right quarter">
+                <button class="topcoat-icon-button" ng-click="refresh()">
+                    <span class="topcoat-icon fa fa-2x fa-refresh"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!--the list-->
+    <ul class="topcoat-list__container">
+        <li ng-repeat="player in playerList" class="topcoat-list__item">
+            <div class="artifact-list-row left" ng-click="open(player.name)">
+                <div class="fa-2x list__item left three-quarters">
+                    {{player.name}}
+                </div>
+                <div class="artifact-icon quarter">
+                    <span class=" fa-2x fa fa-times-circle quarter left"  ng-click="delete(player.name)"></span>
+                </div>
+            </div>
+        </li>
+        <div class="artifact-list-row left">
+            <div class="three-quarters">
+                <input type="text" class="topcoat-text-input" placeholder="name" ng-model="newPlayer.name" />
+            </div>
+            <div class="quarter">
+                <button type="submit" class="topcoat-button--cta" ng-click="create()">Add new</button>
+            </div>
+        </div>
+    </ul>
+</div>
