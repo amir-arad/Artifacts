@@ -17,8 +17,7 @@
     "angular-cookies": "latest",
     "angular-mocks": "latest",
     "angular-route": "latest",
-    "bootstrap": "2.3.*",
-    "angular-bootstrap": "latest",
+    "angular-http-auth": "latest",
     "angular-ui-utils": "latest"
   }
 }
