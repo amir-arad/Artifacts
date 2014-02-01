@@ -1,10 +1,12 @@
 /**
  * Module dependencies.
  */
-var express = require('express'),
+var express = require('express.io'),
     mongoStore = require('connect-mongo')(express),
     flash = require('connect-flash'),
     helpers = require('view-helpers'),
+    passportSocketIo = require("passport.socketio"),
+    util = require('util'),
     config = require('./config');
 
 var connectTimeout = require('connect-timeout');
@@ -35,8 +37,10 @@ module.exports = function(app, config, passport, db) {
     //Enable jsonp
     app.enable("jsonp callback");
 
+    var cookieParser = express.cookieParser;
+
     //cookieParser should be above session
-    app.use(express.cookieParser());
+    app.use(cookieParser());
 
     //bodyParser should be above methodOverride
     // app.use(express.bodyParser());  replaced bodyParser with urlencoded and json
@@ -48,29 +52,33 @@ module.exports = function(app, config, passport, db) {
     app.use(connectTimeout({ time: 10000 }));
 
     //express/mongo session storage
-    app.use(express.session({
+    var sessionConfig = {
+        key: 'connect.sid',
         secret: config.cookie_secret,
         store: new mongoStore({
             db: db,
             collection: 'sessions'
         })
-    }));
+    };
+    app.use(express.session(sessionConfig));
 
-    //connect flash for flash messages
-    app.use(flash());
+    // connect flash for flash messages
+    // app.use(flash());
 
     //dynamic helpers
     app.use(helpers(config.app.name));
 
-    //use passport session
+    // use passport session for express
     app.use(passport.initialize());
     app.use(passport.session());
+
     passport.serializeUser(function(user, done) {
         return done(null, JSON.stringify(user));
     });
     passport.deserializeUser(function(user, done) {
         return done(null, JSON.parse(user));
     });
+
 
     //routes should be at the last
     app.use(app.router);
@@ -103,4 +111,28 @@ module.exports = function(app, config, passport, db) {
         });
     });
 
+    app.http();
+    app.io(); //need to be called before app.io.configure
+
+    // create an extended copy of the session configuration for passport session for socket.io
+    sessionConfig = util._extend({  // for passportSocketIo only
+        passport : passport,
+        cookieParser : cookieParser,
+        success : onSocketAuthorizeSuccess,  // callback on success
+        fail : onSocketAuthorizeFail     // callback on fail/error
+    }, sessionConfig);
+
+    app.io.configure(function() {
+        app.io.set('authorization', passportSocketIo.authorize(sessionConfig));
+    })
+
+    function onSocketAuthorizeSuccess(data, accept){
+        console.log('successful connection to socket.io');
+        accept(null, true);  // propagate
+    }
+    function onSocketAuthorizeFail(data, message, error, accept){
+        if(error) throw new Error(message);
+        console.log('failed connection to socket.io:', message);
+        accept(null, false);  // propagate
+    }
 };

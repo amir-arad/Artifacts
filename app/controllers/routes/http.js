@@ -2,10 +2,10 @@
  * will be attached explicitly to POST, PUT routes,
  * except for files upload routes which handle form parsing themselves
  */
-var formData = require('../../config/formData');
+var formData = require('../../../config/formData');
 module.exports = function(app, config, passport) {
     // init the 3 authorization strategies  :admin, storyTeller, player
-    var auth = new (require('./authorization/Strategies'))(
+    var auth = new (require('../authorization/Strategies'))(
         app, config, passport,
         function(req, res){           // fallback to auth error
          //   res.setHeader('WWW-Authenticate', 'Basic realm="Artifacts"');
@@ -29,7 +29,7 @@ module.exports = function(app, config, passport) {
     app.get('/login', formData, nocache, auth.sysop.getCredentials);
 
 
-    var games = new (require('./Games'))(app, config);
+    var games = new (require('./../Games'))(app, config);
     app.param('gameId', games.game);
     app.get('/defaultGameName', nocache, games.defaultGameName);
     app.get('/games', nocache, auth.sysop.authorize, games.list);
@@ -41,7 +41,7 @@ module.exports = function(app, config, passport) {
     app.put('/games/:gameId', formData, auth.storyteller.authorize, games.update);
     app.del('/games/:gameId', auth.storyteller.authorize, games.destroy);
 
-    var players = new (require('./Players'))(app, config);
+    var players = new (require('./../Players'))(app, config);
     app.param('playerId', players.player);
     app.get('/games/:gameId/players', nocache, auth.storyteller.authorize, players.list);
     app.post('/games/:gameId/players', formData, auth.storyteller.authorize, players.create);
@@ -52,7 +52,7 @@ module.exports = function(app, config, passport) {
 
     app.post('/games/:gameId/players/:playerId/login', formData, auth.player.authenticate, silentOk);
 
-    var artifacts =  new (require('./Artifacts'))(app, config);
+    var artifacts =  new (require('./../Artifacts'))(app, config);
     app.param('artifactId', artifacts.artifact);
     app.get('/games/:gameId/artifacts', nocache, auth.storyteller.authorize, artifacts.listByGame);
     app.get('/games/:gameId/players/:playerId/artifacts', nocache, auth.player.authorize, artifacts.listByPlayer);
@@ -70,7 +70,7 @@ module.exports = function(app, config, passport) {
 
 
     // var multipart = new (require('../app/controllers/Multipart'))(app, config);
-    var assets = new (require('./Assets'))(app, config);
+    var assets = new (require('./../Assets'))(app, config);
     app.param('assetId', assets.asset);
     app.get('/games/:gameId/assets', nocache, auth.storyteller.authorize, assets.list);
     app.get('/games/:gameId/assets/:assetId', nocache, auth.storyteller.authorize, assets.show);

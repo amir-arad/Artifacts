@@ -1,9 +1,10 @@
 /**
  * Module dependencies.
  */
-var express = require('express');
+var express = require('express.io');
 var mongodb = require('mongodb');
 var passport = require('passport');
+var http = require('http')
 var fs = require('fs');
 var _ = require('underscore');
 
