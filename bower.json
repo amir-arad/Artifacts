@@ -19,6 +19,6 @@
         "angular-route": "latest",
         "angular-http-auth": "latest",
         "angular-ui-utils": "latest",
-        "socket.io" : "latest"
+        "angular-socket-io" : "latest"
     }
 }

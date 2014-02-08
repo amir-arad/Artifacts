@@ -7,6 +7,8 @@
 
 var _ = require('underscore');
 var util = require('util');
+var async = require('async');
+var EventEmitter2 = require('eventemitter2').EventEmitter2;
 
 module.exports = function (app, config){
     /**
@@ -22,6 +24,22 @@ module.exports = function (app, config){
     var attributes = ['name', 'location', 'description', 'owner', 'body', 'icon', 'images'];
     var mutableAttributes = _.without(attributes, 'name');
     var _this = this;
+
+    var emitters = {};
+
+    this.gameEmitter = function (gameName) {
+        if (!gameName) throw new Error('No game supplied');
+        var result = emitters[gameName];
+        if (!result) { // emitter per game
+            emitters[gameName] = result = new EventEmitter2({
+                wildcard: true,
+                delimiter: '.',
+                newListener: false,
+                maxListeners: -1
+            });
+        }
+        return result;
+    }
 
     function id(game, name){
         return game._id.toHexString() + '-' + name.toLowerCase();
@@ -64,7 +82,14 @@ module.exports = function (app, config){
         // validation
         var err = validateOwnerOrLocation(game, artifact);
         if (err) return callback(err);
-        dao.insert(artifact, callback);
+
+        dao.insert(artifact, function(err, artifact){
+            if (err) return callback(err);
+            if (artifact.owner) {
+                _this.gameEmitter(game.name).emit([artifact.owner, 'add'], artifact);   // someone has gained an artifact
+            }
+            return callback(null, artifact);
+        });
     };
 
     /**
@@ -72,15 +97,26 @@ module.exports = function (app, config){
      */
     this.update = function(artifact, newFields, callback) {
         if (!artifact || !artifact._id || !artifact.game) return callback(new Error('Corrupt artifact ' + artifact));
-        newFields = _.defaults(_.pick(newFields, mutableAttributes), artifact);
+        var newArtifact = _.defaults(_.pick(newFields, mutableAttributes), artifact);
         // validation
-        app.services.games.game(newFields.game, function(err, game){
+        app.services.games.game(newArtifact.game, function(err, game){
             if (err) return callback(err);
-            err = validateOwnerOrLocation(game, newFields);
+            err = validateOwnerOrLocation(game, newArtifact);
             if (err) return callback(err);
             // TODO BL to validate location
 
-            dao.updateFields(newFields, mutableAttributes, callback);
+            dao.updateFields(newArtifact, mutableAttributes, function(err, newArtifact){
+                if (err) return callback(err);
+                if (artifact.owner !== newArtifact.owner) {
+                    if (artifact.owner){     // someone has lost an artifact
+                        _this.gameEmitter(game.name).emit([artifact.owner, 'remove'], artifact);
+                    }
+                    if (newArtifact.owner){     // someone has gained an artifact
+                        _this.gameEmitter(game.name).emit([newArtifact.owner, 'add'], newArtifact);
+                    }
+                }
+                return callback(null, newArtifact);
+            });
         });
     };
 
@@ -89,7 +125,13 @@ module.exports = function (app, config){
         if (artifact.owner === dst) return callback(null, artifact);   // meaningless action, no need for noise
         if (artifact.owner !== src) return callback(new Error('Artifact '+artifact.name+' does not belong to ' + src));
 
-        dao.selectAndUpdateFields({_id:artifact._id, game:game._id, owner:src}, {owner:dst}, ['owner'], callback);
+        dao.selectAndUpdateFields({_id:artifact._id, game:game._id, owner:src}, {owner:dst}, ['owner'],
+            function(err, newArtifact){
+                if (err) return callback(err);
+                _this.gameEmitter(game.name).emit([src, 'remove'], artifact);  // someone has lost an artifact
+                _this.gameEmitter(game.name).emit([dst, 'add'], newArtifact);  // someone has gained an artifact
+                return callback(null, newArtifact);
+            });
     }
 
     this.give = function(game, from, artifact, to, callback) {
@@ -106,10 +148,15 @@ module.exports = function (app, config){
     /**
      * List of artifacts near a location
      * for now, simply query the everywhere context
+     * @param game
+     * @param location [optional]
+     * @param callback
+     * @returns {*}
      */
     this.listNearLocation = function(game, location, callback) {
+        if (!callback) callback = location; // todo improve using "is function" on location. no location supplied
         // TODO add location query
-        return _this.listByOwner(game, 'everywhere', callback);
+        return _this.listByOwner('everywhere', game, callback);
     };
 
     /**
@@ -117,7 +164,13 @@ module.exports = function (app, config){
      */
     this.destroy = function(artifact, callback) {
         if (!artifact || !artifact._id) return callback(new Error('No artifact id ' + artifact));
-        dao.remove(artifact, callback);
+        dao.remove(artifact, function(err, artifact){
+            if (err) return callback(err);
+            if (artifact.owner){     // someone has lost an artifact
+                _this.gameEmitter(game.name).emit([artifact.owner, 'remove'], artifact);
+            }
+            return callback(null, artifact);
+        });
     };
 
     /**
@@ -131,7 +184,7 @@ module.exports = function (app, config){
     /**
      * List of artifacts by a owner
      */
-    this.listByOwner = function(game, owner, callback) {
+    this.listByOwner = function(owner, game, callback) {
         if (!game || !game._id) return callback(new Error('No game id ' + game));
         if (!owner) return callback(new Error('No owner ' + game));
         var ownerName =  typeof owner === 'string' ? owner : owner.name;

@@ -111,7 +111,7 @@ module.exports = function (app, config){
      * List of artifacts in the inventory context
      */
     this.listByPlayer = function(req, res, next) {
-        app.services.artifacts.listByOwner(req.game, req.player, function(err, artifacts) {
+        app.services.artifacts.listByOwner(req.player, req.game, function(err, artifacts) {
             if (err) return next(err);
             res.jsonp(artifacts);
         });

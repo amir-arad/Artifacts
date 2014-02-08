@@ -1,13 +1,14 @@
 /**
  * Module dependencies.
  */
-var express = require('express.io'),
-    mongoStore = require('connect-mongo')(express),
-    flash = require('connect-flash'),
-    helpers = require('view-helpers'),
-    passportSocketIo = require("passport.socketio"),
-    util = require('util'),
-    config = require('./config');
+var express = require('express.io');
+var mongoStore = require('connect-mongo')(express);
+var flash = require('connect-flash');
+var helpers = require('view-helpers');
+var passportSocketIo = require("passport.socketio");
+var async = require('async');
+var util = require('util');
+var config = require('./config');
 
 var connectTimeout = require('connect-timeout');
 
@@ -111,28 +112,27 @@ module.exports = function(app, config, passport, db) {
         });
     });
 
-    app.http();
-    app.io(); //need to be called before app.io.configure
-
-    // create an extended copy of the session configuration for passport session for socket.io
-    sessionConfig = util._extend({  // for passportSocketIo only
-        passport : passport,
-        cookieParser : cookieParser,
-        success : onSocketAuthorizeSuccess,  // callback on success
-        fail : onSocketAuthorizeFail     // callback on fail/error
-    }, sessionConfig);
+    // init http and socket (but don't listen on a port yet)
+    // need to be called before app.io.configure
+    app.http().io();
 
     app.io.configure(function() {
-        app.io.set('authorization', passportSocketIo.authorize(sessionConfig));
-    })
+        // ugly patch to make express.io and passportSocketIo to work their different session magic
+        var expressAuth = app.io.get('authorization');
 
-    function onSocketAuthorizeSuccess(data, accept){
-        console.log('successful connection to socket.io');
-        accept(null, true);  // propagate
-    }
-    function onSocketAuthorizeFail(data, message, error, accept){
-        if(error) throw new Error(message);
-        console.log('failed connection to socket.io:', message);
-        accept(null, false);  // propagate
-    }
+        // create an extended copy of the session configuration for passport session for socket.io
+        sessionConfig = util._extend({
+            passport : passport,                // send customized instance of passport
+            cookieParser : cookieParser,        // send the cookie parser in use
+            success : expressAuth,  // callback on success
+            fail : onSocketAuthorizeFail     // callback on fail/error
+        }, sessionConfig);
+
+        function onSocketAuthorizeFail(data, message, error, accept){
+            if(error) throw new Error(message);
+            console.log('failed connection to socket.io:', message);
+            accept(null, false);  // propagate
+        }
+        app.io.set('authorization', passportSocketIo.authorize(sessionConfig));
+    });
 };

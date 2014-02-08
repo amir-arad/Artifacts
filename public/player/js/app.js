@@ -6,7 +6,8 @@ var player = player || {
 };
 
 angular.module('player', ['player.controllers', 'player.directives', 'player.filters', 'player.services',
-        'ngRoute', 'ngAnimate', 'LocalStorageModule', 'ajoslin.mobile-navigate', 'ngSanitize', 'angular-carousel'])
+        'ngRoute', 'ngAnimate', 'LocalStorageModule', 'ajoslin.mobile-navigate', 'ngSanitize',
+        'angular-carousel', 'btford.socket-io'])
     .config(["$provide",function($provide){
         $provide.decorator("$log", function($delegate, logService){
             return logService($delegate);
@@ -36,8 +37,8 @@ angular.module('player', ['player.controllers', 'player.directives', 'player.fil
                         isLoggedIn: function (authService) {
                             return authService.isLoggedIn();
                         },
-                        inventory: function (apiService) {
-                            return apiService.inventory();
+                        ready : function (apiService) {
+                            return apiService.ready;
                         }
                     }
                 })
@@ -47,6 +48,9 @@ angular.module('player', ['player.controllers', 'player.directives', 'player.fil
                     resolve: {
                         artifact: function ($route, apiService) {
                             return apiService.examine($route.current.params.id);
+                        },
+                        ready : function (apiService) {
+                            return apiService.ready;
                         }
                     }
                 })

@@ -19,11 +19,53 @@ angular.module('player.services', ['restangular'])
             }
             return response;
         });
+    })
+    .run(function($rootScope, $timeout, $log,  apiService, apiSocket) {
+        var connected = false;
+        var interval = 5000;  // todo get allow server to modify this
+        var timer = $timeout(angular.noop, 1);  // init timer so that stopReporting() never fails
+        function reportToGame(){
+            apiService.reportToGame()['finally'](function(){     // 'finally' is a reserved word in JavaScript, and IE8 takes it seriously
+                timer = $timeout(reportToGame, interval);
+            });
+        }
+        function stopReporting() {
+            $timeout.cancel(timer);
+        };
+        $rootScope.$on('$destroy', stopReporting);
+        // sync logical socket lifecycle to login session
+        $rootScope.$on('logged in', function(){
+            $log.debug('logged in detected');
+            if (!connected){
+                apiSocket.emit('connect', {}, reportToGame);       // start reporting data after login
+            }
+            connected = true;
+        });
+        $rootScope.$on('logged out', function(){
+            $log.debug('logged out detected');
+            stopReporting();
+            if (connected){
+                apiSocket.emit('disconnect');
+            }
+            connected = false;
+        });
+        // apiSocket.forward(['inventory', 'nearby'], $rootScope);
+        $rootScope.$on('socket:inventory', function(e){
+            $log.debug('$rootScope event ', e);
+        });
     });
 
 
 player.services._ = function () {
     return window._; // assumes loDash has already been loaded on the page
+};
+
+player.services.apiSocket = function ($log, socketFactory) {
+    $log.debug('creating API socket');
+    var result = socketFactory({
+        prefix: 'api:'
+    });
+    return result;
 };
 
 var baseGame;     //    /games/:gameId
@@ -35,7 +77,7 @@ var basePlayer;   //    /games/:gameId/players/:playerId
  * @param Restangular
  * @returns {{init: Function, login: Function}}
  */
-player.services.apiService = function ($log, Restangular, _, localStorageService) {
+player.services.apiService = function ($log, $q, Restangular, _, localStorageService, apiSocket) {
     function baseArtifact(artifactId) {
         //      /games/:gameId/artifacts/:artifactId
         return baseGame.one('artifacts', artifactId);
@@ -55,7 +97,29 @@ player.services.apiService = function ($log, Restangular, _, localStorageService
         return artifact;
     }
 
+    function replaceRepoArtifacts(repository, newArtifacts) {
+        var enrichedArtifacts = _.forEach(newArtifacts, enrichArtifactFromApi);
+        Array.prototype.splice.apply(repository, [0, repository.length].concat(enrichedArtifacts));
+    }
+
+    var inventoryInit = $q.defer();
+    var nearbyInit = $q.defer();
+    var inventory = [];
+    var nearby = [];
+
+    apiSocket.on('inventory:sync', function (artifacts) {
+        $log.debug('inventory refresh');
+        replaceRepoArtifacts(inventory, artifacts);
+        inventoryInit.resolve();
+    });
+    apiSocket.on('nearby:sync', function (artifacts) {
+        $log.debug('nearby refresh');
+        replaceRepoArtifacts(nearby, artifacts);
+        nearbyInit.resolve();
+    });
+
     var service = {
+        ready : $q.all([inventoryInit.promise, nearbyInit.promise]),   // this data-less promise will resolve after both inventory and nearby are set
         init : function initApiService (gameId, playerId) {
             $log.debug('context detected', gameId, playerId);
             if (gameId && playerId){
@@ -78,15 +142,25 @@ player.services.apiService = function ($log, Restangular, _, localStorageService
             // post /logout
             return Restangular.one('logout').post();
         },
+        reportToGame: function reportToGameFromApi(){
+            $log.debug('reporting');
+            var report = {
+                // TODO implement
+            };
+            apiSocket.emit('report', report);
+            return $q.when(report); // dummy promise to support callbacks in the future
+        },
         inventory: function inventoryFromApi() {
+            return $q.when(inventory);  // wrap with promise to hide implementation
             // get /games/:gameId/players/:playerId/artifacts
-            return basePlayer.one('artifacts').getList().then(function(artifacts){
+/*            return basePlayer.one('artifacts').getList().then(function(artifacts){
                 return _.forEach(artifacts, enrichArtifactFromApi);
-            });
+            });*/
         },
         nearby: function nearbyFromApi() {
+            return $q.when(nearby)  // wrap with promise to hide implementation
             // get /games/:gameId/players/:playerId/nearby
-            return basePlayer.one('nearby').getList();
+            // return basePlayer.one('nearby').getList();
         },
         examine: function examineFromApi(artifactId) {
             // get /games/:gameId/artifacts/:artifactId
@@ -173,12 +247,13 @@ player.services.logService = function () {
  * @param $log angular's logging service
  * @param Restangular REST service
  */
-player.services.authService = function ($log, apiService) {
+player.services.authService = function ($log, $rootScope, apiService) {
     var service = {
         logout: function () {
             $log.debug('logout called');
             return apiService.logout().then(function(){
-                $log.debug('logged out');
+                $log.debug('logout executed');
+                $rootScope.$emit('logged out');
                 apiService.init(null, null);
             });
         },
@@ -187,7 +262,10 @@ player.services.authService = function ($log, apiService) {
             return service.isLoggedIn().then(function(loggedIn){
                 if (!loggedIn){
                     apiService.init(gameId, playerId);
-                    return apiService.login(password);
+                    return apiService.login(password).then(function(){
+                        $log.debug('loggin executed');
+                        $rootScope.$emit('logged in');
+                    });
                 }
             });
         },
@@ -195,6 +273,7 @@ player.services.authService = function ($log, apiService) {
             return apiService.getUser().then(function(user){
                 if (user && user.type === "player"){
                     apiService.init(user.game, user.playerName);
+                    $rootScope.$emit('logged in');
                     return user.playerName;
                 }
                 return null;

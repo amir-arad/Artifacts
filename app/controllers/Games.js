@@ -14,10 +14,10 @@ module.exports = function (app, config){
     var _ = require('underscore');
 
     /**
-     * Find game by id
+     * Find game by name
      */
-    this.game = function(req, res, next, id) {
-        app.services.games.game(id, function(err, game){
+    this.game = function(req, res, next, name) {
+        app.services.games.game(name, function(err, game){
             if (err) return next(err);
             req.game = game;
             return next();
