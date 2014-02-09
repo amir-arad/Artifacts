@@ -13,7 +13,7 @@ module.exports = function(app, config) {
     // https://github.com/techpines/express.io/tree/master/lib#socketrequest
     // https://github.com/techpines/express.io/tree/master/examples#server-appjs-5
     app.io.route('connect', function(req){            // todo not the correct event. perhaps "sync" or something
-        app.logger.debug("socket connect : \n" + util.inspect(req.handshake));
+        app.logger.debug("socket connect : \n" + util.inspect(req.handshake.session.passport.user));
 
         if (req.handshake.user.type === 'player'){
             // player app is waiting for inventory and nearby lists
@@ -28,18 +28,10 @@ module.exports = function(app, config) {
                     _.bind(req.io.emit, req.io, event + ':sync')  // send inventory as event on socket, binding 'this'.
                 ];
                 async.waterfall(syncArtifactsListChain, callback);
-                async.waterfall([
-                    getGame,     // find game by name
-                    function (game, callback){              // register to all artifact events on the owner
-                        var gameEmitter = app.services.artifacts.gameEmitter(game.name);
-                        gameEmitter.on([ownerName, '*'], function(artifact) {
-                            var event = this.event;
-                            async.waterfall(syncArtifactsListChain);    // todo dirty : initiate a full sync on any change
-                        });
-                        callback();
-                    }
-                ].concat(syncArtifactsListChain)   // then initiate a full sync
-                    , callback);
+                app.services.artifacts.messaging.on([req.handshake.user.game, ownerName, '*'], function(artifact) {
+                    var event = this.event;
+                    async.waterfall(syncArtifactsListChain);    // todo dirty : initiate a full sync on any change
+                });
             }
             // execute both inventory and nearby queries
             async.parallel([
@@ -57,13 +49,16 @@ module.exports = function(app, config) {
     });
 
     app.io.route('disconnect', function(req){
-        app.logger.debug("socket disconnect : \n" + util.inspect(req.handshake));
+        app.logger.debug("socket disconnect : \n" + util.inspect(req.handshake.session.passport.user));
         req.io.leave(req.handshake.user.game); // leave game room
         req.io.respond();
     });
 
     app.io.route('report', function(req){
-        app.logger.debug("socket report : " + req.handshake.session.passport.user);
+        app.logger.debug("socket report : " + req.handshake.session.passport.user + " : \n" + util.inspect(req.data));
+        if (req.data && req.data.location){
+            // todo handle new location
+        }
         // todo send nearby if changed
     });
 

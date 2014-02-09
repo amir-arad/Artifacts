@@ -20,7 +20,7 @@ angular.module('player.services', ['restangular'])
             return response;
         });
     })
-    .run(function($rootScope, $timeout, $log,  apiService, apiSocket) {
+    .run(function($rootScope, $timeout, $log,  apiService, apiSocket, geoLocationService, alertService) {
         var connected = false;
         var interval = 5000;  // todo get allow server to modify this
         var timer = $timeout(angular.noop, 1);  // init timer so that stopReporting() never fails
@@ -38,6 +38,7 @@ angular.module('player.services', ['restangular'])
             $log.debug('logged in detected');
             if (!connected){
                 apiSocket.emit('connect', {}, reportToGame);       // start reporting data after login
+                apiService.startReportToGame();
             }
             connected = true;
         });
@@ -45,14 +46,12 @@ angular.module('player.services', ['restangular'])
             $log.debug('logged out detected');
             stopReporting();
             if (connected){
+                apiService.stopReportToGame();
                 apiSocket.emit('disconnect');
             }
             connected = false;
         });
         // apiSocket.forward(['inventory', 'nearby'], $rootScope);
-        $rootScope.$on('socket:inventory', function(e){
-            $log.debug('$rootScope event ', e);
-        });
     });
 
 
@@ -77,7 +76,7 @@ var basePlayer;   //    /games/:gameId/players/:playerId
  * @param Restangular
  * @returns {{init: Function, login: Function}}
  */
-player.services.apiService = function ($log, $q, Restangular, _, localStorageService, apiSocket) {
+player.services.apiService = function ($log, $q, Restangular, _, localStorageService, apiSocket, geoLocationService, alertService) {
     function baseArtifact(artifactId) {
         //      /games/:gameId/artifacts/:artifactId
         return baseGame.one('artifacts', artifactId);
@@ -117,7 +116,7 @@ player.services.apiService = function ($log, $q, Restangular, _, localStorageSer
         replaceRepoArtifacts(nearby, artifacts);
         nearbyInit.resolve();
     });
-
+    var locationWatch = -1;
     var service = {
         ready : $q.all([inventoryInit.promise, nearbyInit.promise]),   // this data-less promise will resolve after both inventory and nearby are set
         init : function initApiService (gameId, playerId) {
@@ -142,25 +141,30 @@ player.services.apiService = function ($log, $q, Restangular, _, localStorageSer
             // post /logout
             return Restangular.one('logout').post();
         },
-        reportToGame: function reportToGameFromApi(){
+        startReportToGame: function startReportToGameFromApi(){
             $log.debug('reporting');
-            var report = {
-                // TODO implement
-            };
-            apiSocket.emit('report', report);
-            return $q.when(report); // dummy promise to support callbacks in the future
+            // getting geolocation
+            geoLocationService.query()
+                .then(function (position){
+                    locationWatch = geoLocationService.track(function(position){
+                        apiSocket.emit('report', {location : position.coords});
+                    }, function(error){
+                        alertService.add("error obtaining position : " + error.message);
+                    }, {throttle : 5000});
+                    apiSocket.emit('report', {location : position.coords});
+                }).catch(function(error){
+                    alertService.add("error obtaining position : " + error.message);
+                });
+            // TODO add gyro support
+        },
+        stopReportToGame: function stopReportToGameFromApi(){
+            geoLocationService.stopTracking(locationWatch)
         },
         inventory: function inventoryFromApi() {
             return $q.when(inventory);  // wrap with promise to hide implementation
-            // get /games/:gameId/players/:playerId/artifacts
-/*            return basePlayer.one('artifacts').getList().then(function(artifacts){
-                return _.forEach(artifacts, enrichArtifactFromApi);
-            });*/
         },
         nearby: function nearbyFromApi() {
             return $q.when(nearby)  // wrap with promise to hide implementation
-            // get /games/:gameId/players/:playerId/nearby
-            // return basePlayer.one('nearby').getList();
         },
         examine: function examineFromApi(artifactId) {
             // get /games/:gameId/artifacts/:artifactId
@@ -282,6 +286,58 @@ player.services.authService = function ($log, $rootScope, apiService) {
     };
 
     return service;
+};
+
+
+//    interface Position {
+//        readonly attribute Coordinates coords;
+//        readonly attribute DOMTimeStamp timestamp;
+//    };
+
+//    interface Coordinates {
+//        readonly attribute double latitude;
+//        readonly attribute double longitude;
+//        readonly attribute double? altitude;
+//        readonly attribute double accuracy;
+//        readonly attribute double? altitudeAccuracy;
+//        readonly attribute double? heading;
+//        readonly attribute double? speed;
+//    }
+
+// http://dev.w3.org/geo/api/spec-source.html#position_options_interface
+//interface PositionOptions {
+//    attribute boolean enableHighAccuracy;
+//    attribute long timeout;
+//    attribute long maximumAge;
+//};
+
+// todo use optimistic high accuracy with timeout fallback:
+// http://stackoverflow.com/questions/9053262/geolocation-html5-enablehighaccuracy-true-false-or-best-option
+player.services.geoLocationService = function ($window, $q, $rootScope, _) {
+    if (!$window.navigator){
+        throw new Error("geo-location support required");
+    }
+    var scopeApply = _.bind($rootScope.$apply, $rootScope);
+    return {
+        query: function (options) {
+            var defer = $q.defer();
+            $window.navigator.geolocation.getCurrentPosition(
+                _.compose(scopeApply, _.partial(_.bind, defer.resolve, defer)),
+                _.compose(scopeApply, _.partial(_.bind, defer.reject, defer)),
+                options);
+            return defer.promise;
+        },
+        track : function(successCallback, errorCallback, options) {
+            var minTimeBetweenCalls =  (options && options.throttle) || 5000;
+            return $window.navigator.geolocation.watchPosition(
+                _.compose(scopeApply, _.partial(_.partial, _.throttle(successCallback, minTimeBetweenCalls, {leading: false}))),
+                _.compose(scopeApply, _.partial(_.partial, _.throttle(errorCallback, minTimeBetweenCalls, {leading: false}))),
+                options);
+        },
+        stopTracking : function(watchId) {
+            return $window.navigator.geolocation.clearWatch(watchId);
+        }
+    };
 };
 
 

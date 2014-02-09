@@ -8,7 +8,7 @@
 var _ = require('underscore');
 var util = require('util');
 var async = require('async');
-var EventEmitter2 = require('eventemitter2').EventEmitter2;
+var Messaging = require('./Messaging');
 
 module.exports = function (app, config){
     /**
@@ -24,22 +24,7 @@ module.exports = function (app, config){
     var attributes = ['name', 'location', 'description', 'owner', 'body', 'icon', 'images'];
     var mutableAttributes = _.without(attributes, 'name');
     var _this = this;
-
-    var emitters = {};
-
-    this.gameEmitter = function (gameName) {
-        if (!gameName) throw new Error('No game supplied');
-        var result = emitters[gameName];
-        if (!result) { // emitter per game
-            emitters[gameName] = result = new EventEmitter2({
-                wildcard: true,
-                delimiter: '.',
-                newListener: false,
-                maxListeners: -1
-            });
-        }
-        return result;
-    }
+    this.messaging = new Messaging();
 
     function id(game, name){
         return game._id.toHexString() + '-' + name.toLowerCase();
@@ -86,7 +71,7 @@ module.exports = function (app, config){
         dao.insert(artifact, function(err, artifact){
             if (err) return callback(err);
             if (artifact.owner) {
-                _this.gameEmitter(game.name).emit([artifact.owner, 'add'], artifact);   // someone has gained an artifact
+                _this.messaging.emit([game.name, artifact.owner, 'add'], artifact);   // someone has gained an artifact
             }
             return callback(null, artifact);
         });
@@ -109,10 +94,10 @@ module.exports = function (app, config){
                 if (err) return callback(err);
                 if (artifact.owner !== newArtifact.owner) {
                     if (artifact.owner){     // someone has lost an artifact
-                        _this.gameEmitter(game.name).emit([artifact.owner, 'remove'], artifact);
+                        _this.messaging.emit([game.name, artifact.owner, 'remove'], artifact);
                     }
                     if (newArtifact.owner){     // someone has gained an artifact
-                        _this.gameEmitter(game.name).emit([newArtifact.owner, 'add'], newArtifact);
+                        _this.messaging.emit([game.name, newArtifact.owner, 'add'], newArtifact);
                     }
                 }
                 return callback(null, newArtifact);
@@ -128,8 +113,8 @@ module.exports = function (app, config){
         dao.selectAndUpdateFields({_id:artifact._id, game:game._id, owner:src}, {owner:dst}, ['owner'],
             function(err, newArtifact){
                 if (err) return callback(err);
-                _this.gameEmitter(game.name).emit([src, 'remove'], artifact);  // someone has lost an artifact
-                _this.gameEmitter(game.name).emit([dst, 'add'], newArtifact);  // someone has gained an artifact
+                _this.messaging.emit([game.name, src, 'remove'], artifact);  // someone has lost an artifact
+                _this.messaging.emit([game.name, dst, 'add'], newArtifact);  // someone has gained an artifact
                 return callback(null, newArtifact);
             });
     }
@@ -167,7 +152,7 @@ module.exports = function (app, config){
         dao.remove(artifact, function(err, artifact){
             if (err) return callback(err);
             if (artifact.owner){     // someone has lost an artifact
-                _this.gameEmitter(game.name).emit([artifact.owner, 'remove'], artifact);
+                _this.messaging.emit([game.name, artifact.owner, 'remove'], artifact);
             }
             return callback(null, artifact);
         });
