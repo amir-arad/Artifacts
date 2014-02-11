@@ -71,7 +71,7 @@ module.exports = function (app, config){
      * Drop an item from the inventory
      */
     this.drop  = function(req, res, next) {
-        app.services.artifacts.give(req.game, req.player.name, req.artifact, 'everywhere', function(err, artifact) {
+        app.services.artifacts.drop(req.player, req.artifact, function(err, artifact) {
             if (err) return next(err);
             res.jsonp(artifact);
         });
@@ -81,7 +81,7 @@ module.exports = function (app, config){
      * Pick up an item from the nearby context
      */
     this.pickup  = function(req, res, next) {
-        app.services.artifacts.take(req.game, req.player.name, req.artifact, 'everywhere', function(err, artifact) {
+        app.services.artifacts.pickup(req.game, req.player, req.artifact, function(err, artifact) {
             if (err) return next(err);
             res.jsonp(artifact);
         });
@@ -91,7 +91,7 @@ module.exports = function (app, config){
      * List of artifacts in the nearby context
      */
     this.nearby  = function(req, res, next) {
-        app.services.artifacts.listNearLocation(req.game, req.player.location, function(err, artifacts) {
+        app.services.artifacts.listNearLocation(req.player.location, req.game, function(err, artifacts) {
             if (err) return next(err);
             res.jsonp(artifacts);
         });

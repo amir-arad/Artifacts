@@ -24,7 +24,6 @@ module.exports = function (app, config){
     var attributes = ['name', 'location', 'description', 'owner', 'body', 'icon', 'images'];
     var mutableAttributes = _.without(attributes, 'name');
     var _this = this;
-    this.messaging = new Messaging();
 
     function id(game, name){
         return game._id.toHexString() + '-' + name.toLowerCase();
@@ -43,13 +42,13 @@ module.exports = function (app, config){
 
     function validateOwnerOrLocation(game, artifact){
         if (artifact.owner) {
-            delete artifact.location;
+            artifact.location = null;
             // TODO check super locations ('everywhere')
             if (!game.players[artifact.owner] && artifact.owner !== 'everywhere'){
                 return new Error('Illegal owner ' + artifact.owner);
             }
         } else {
-            delete artifact.owner;
+            artifact.owner = null;
             if (!artifact.location) return new Error('No owner nor location ' + artifact);
         }
         return null;
@@ -71,7 +70,7 @@ module.exports = function (app, config){
         dao.insert(artifact, function(err, artifact){
             if (err) return callback(err);
             if (artifact.owner) {
-                _this.messaging.emit([game.name, artifact.owner, 'add'], artifact);   // someone has gained an artifact
+                app.services.messaging.emit([game.name, artifact.owner, 'add'], artifact);   // someone has gained an artifact
             }
             return callback(null, artifact);
         });
@@ -94,10 +93,14 @@ module.exports = function (app, config){
                 if (err) return callback(err);
                 if (artifact.owner !== newArtifact.owner) {
                     if (artifact.owner){     // someone has lost an artifact
-                        _this.messaging.emit([game.name, artifact.owner, 'remove'], artifact);
+                        app.services.messaging.emit([game.name, 'artifacts', artifact.owner, 'remove'], artifact);
+                    } else {
+                        app.services.messaging.emit([game.name, 'artifacts', 'nearby', 'remove'], newArtifact);
                     }
                     if (newArtifact.owner){     // someone has gained an artifact
-                        _this.messaging.emit([game.name, newArtifact.owner, 'add'], newArtifact);
+                        app.services.messaging.emit([game.name, 'artifacts', newArtifact.owner, 'add'], newArtifact);
+                    } else {
+                        app.services.messaging.emit([game.name, 'artifacts', 'nearby', 'add'], newArtifact);
                     }
                 }
                 return callback(null, newArtifact);
@@ -113,8 +116,8 @@ module.exports = function (app, config){
         dao.selectAndUpdateFields({_id:artifact._id, game:game._id, owner:src}, {owner:dst}, ['owner'],
             function(err, newArtifact){
                 if (err) return callback(err);
-                _this.messaging.emit([game.name, src, 'remove'], artifact);  // someone has lost an artifact
-                _this.messaging.emit([game.name, dst, 'add'], newArtifact);  // someone has gained an artifact
+                app.services.messaging.emit([game.name, 'artifacts', src, 'remove'], artifact);  // someone has lost an artifact
+                app.services.messaging.emit([game.name, 'artifacts', dst, 'add'], newArtifact);  // someone has gained an artifact
                 return callback(null, newArtifact);
             });
     }
@@ -130,6 +133,25 @@ module.exports = function (app, config){
         return this.transfer(game, from, artifact, to, callback);
     };
 
+    this.drop = function(player, artifact, callback) {
+        if (artifact.owner !== player.name) return callback(new Error('Artifact '+artifact.name+' cannot be dropped by ' + player.name));
+        this.update(artifact, {location : player.location, owner : null}, callback);
+    };
+
+    this.pickup = function(game, player, artifact, callback) {
+        if (artifact.owner !== null) return callback(new Error('Artifact '+artifact.name+' cannot be picked up as it is owned by ' + artifact.owner));
+        dao.selectAndUpdateFields(
+            {_id:artifact._id, 'game' : game._id, owner : null, 'location' : {'$near' : {'$geometry' : player.location , '$maxDistance' : 20}}},
+            {owner : player.name},
+            {'location' : '$unset', 'owner' : '$set'},
+            function(err, artifact){
+                if (err) return callback(err);
+                app.services.messaging.emit([game.name, 'artifacts', artifact.owner, 'add'], artifact);
+                app.services.messaging.emit([game.name, 'artifacts', 'nearby', 'remove'], artifact);
+                return callback(null, artifact);
+            });
+    };
+
     /**
      * List of artifacts near a location
      * for now, simply query the everywhere context
@@ -138,10 +160,9 @@ module.exports = function (app, config){
      * @param callback
      * @returns {*}
      */
-    this.listNearLocation = function(game, location, callback) {
+    this.listNearLocation = function(location, game, callback) {
         if (!callback) callback = location; // todo improve using "is function" on location. no location supplied
-        // TODO add location query
-        return _this.listByOwner('everywhere', game, callback);
+        dao.list({'location' : {'$near' : {'$geometry' : location , '$maxDistance' : 20}}}, callback);
     };
 
     /**
@@ -152,7 +173,7 @@ module.exports = function (app, config){
         dao.remove(artifact, function(err, artifact){
             if (err) return callback(err);
             if (artifact.owner){     // someone has lost an artifact
-                _this.messaging.emit([game.name, artifact.owner, 'remove'], artifact);
+                app.services.messaging.emit([game.name, 'artifacts', artifact.owner, 'remove'], artifact);
             }
             return callback(null, artifact);
         });

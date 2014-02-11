@@ -8,7 +8,6 @@ module.exports = function(app, config, passport) {
     var auth = new (require('../authorization/Strategies'))(
         app, config, passport,
         function(req, res){           // fallback to auth error
-         //   res.setHeader('WWW-Authenticate', 'Basic realm="Artifacdefinedts"');
             res.send(401, { "msg" : "error.no.credentials" });    // Unauthorized
         });
 
@@ -18,6 +17,13 @@ module.exports = function(app, config, passport) {
         res.header('Pragma', 'no-cache');
         next();
     }
+
+    function cache(req, res, next) {
+        res.header('Cache-Control', 'private, no-cache, max-age=3600');
+        res.header('Expires', new Date(Date.now() + 3600000).toUTCString());
+        next();
+    }
+
     app.post('/logout', function(req, res, next){
         req.logout();
         res.send(204);         // OK, No Content
@@ -87,6 +93,6 @@ module.exports = function(app, config, passport) {
 
     // specific hack for nicely display of artifact to the user
     app.param('assetFileName', assets.assetAsFile);
-    app.get('/games/:gameId/artifacts/:artifactId/:assetFileName', nocache, auth.player.authorize, assets.show);
+    app.get('/games/:gameId/artifacts/:artifactId/:assetFileName', cache, auth.player.authorize, assets.show);
 
 };

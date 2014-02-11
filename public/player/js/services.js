@@ -150,7 +150,7 @@ player.services.apiService = function ($log, $q, Restangular, _, localStorageSer
                         apiSocket.emit('report', {location : position.coords});
                     }, function(error){
                         alertService.add("error obtaining position : " + error.message);
-                    }, {throttle : 5000});
+                    }, {throttle : 5000, enableHighAccuracy : false});
                     apiSocket.emit('report', {location : position.coords});
                 }).catch(function(error){
                     alertService.add("error obtaining position : " + error.message);

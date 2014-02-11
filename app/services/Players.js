@@ -14,10 +14,26 @@ var async = require('async');
 var util = require('util');
 
 module.exports = function (app, config){
+
+    var locationCache = {};
+
+    function locationKey(game, player) {
+        return game + '.' + player;
+    }
+
+    app.services.messaging.on(['*', 'players', '*', 'location'], function(location) {
+        app.logger.debug("event received : \n" + util.inspect(this.event) + "\n" + util.inspect(location));
+        locationCache[locationKey(this.event[0], this.event[2])] = location;
+    });
+
     /**
      * Module dependencies.
      */
     var dao = new (require('../dal/Dao'))(app, {'collectionName':'games'});
+
+    this.getPlayerLocation = function(game, playerName) {
+        return locationCache[locationKey(game, playerName)];
+    }
 
     /**
      * Find player by id
@@ -26,6 +42,7 @@ module.exports = function (app, config){
         if (!game) return new Error('Must specify game');
         var player = game.players[playerName];
         if (!player) return callback(new app.errors.NotFound('Failed to load player ' + playerName));
+        player.location = this.getPlayerLocation(game.name, playerName);
         return callback(null, player);
     };
 

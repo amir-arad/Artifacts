@@ -12,36 +12,39 @@ module.exports = function(app, config) {
 
     // https://github.com/techpines/express.io/tree/master/lib#socketrequest
     // https://github.com/techpines/express.io/tree/master/examples#server-appjs-5
-    app.io.route('connect', function(req){            // todo not the correct event. perhaps "sync" or something
+    app.io.route('connect', function(req){            // todo not the correct event name. perhaps "sync" or something
         app.logger.debug("socket connect : \n" + util.inspect(req.handshake.session.passport.user));
 
         if (req.handshake.user.type === 'player'){
             // player app is waiting for inventory and nearby lists
-            // cache "get game" result for the next 2 requests
-            var getGame = async.memoize(async.apply(app.services.games.game, req.handshake.user.game));
-            // this function will query for an inventory of an owner and will emit it via the socket as the supplied event
-            function syncListByOwner(ownerName, event, callback) {
-                // sync the entire list
-                var syncArtifactsListChain = [
-                    getGame,     // find game by name
-                    async.apply(app.services.artifacts.listByOwner, ownerName),  // get inventory by game and player
-                    _.bind(req.io.emit, req.io, event + ':sync')  // send inventory as event on socket, binding 'this'.
-                ];
-                async.waterfall(syncArtifactsListChain, callback);
-                app.services.artifacts.messaging.on([req.handshake.user.game, ownerName, '*'], function(artifact) {
-                    var event = this.event;
-                    async.waterfall(syncArtifactsListChain);    // todo dirty : initiate a full sync on any change
-                });
-            }
-            // execute both inventory and nearby queries
-            async.parallel([
-                async.apply(syncListByOwner, req.handshake.user.playerName, 'inventory'),   // send inventory to user
-                async.apply(syncListByOwner, 'everywhere', 'nearby')] // send only global nearby to user
-                , function (err, data) {     // after both are sent to the app
+            // query for an inventory and emit it via the socket as the supplied event
+            var syncArtifactsListChain = [
+                async.apply(app.services.games.game, req.handshake.user.game),     // find game by name
+                async.apply(app.services.artifacts.listByOwner, req.handshake.user.playerName),  // get inventory by game and player
+                _.bind(req.io.emit, req.io, 'inventory:sync')  // send inventory as event on socket, binding 'this'.
+            ];
+
+            req.io.join(req.handshake.user.game); // join game room
+            // register to future changes in inventory
+            app.services.messaging.on([req.handshake.user.game, 'artifacts', req.handshake.user.playerName, '*'], function(artifact) {
+                app.logger.debug("event received : \n" + util.inspect(this.event) + "\n" + util.inspect(artifact));
+                async.waterfall(syncArtifactsListChain);    // todo dirty : initiate a full sync on any change
+            });
+            req.io.respond();  // respond to original request
+
+            // register to nearby changes (currently all changes in same game)
+            app.services.messaging.on([req.handshake.user.game, 'artifacts', 'nearby', '*'], function(artifact) {
+                app.logger.debug("event received : \n" + util.inspect(this.event) + "\n" + util.inspect(artifact));
+                var geoJsonLocation = app.services.players.getPlayerLocation(req.handshake.user.game, req.handshake.user.playerName);
+                async.waterfall([
+                    async.apply(app.services.games.game, req.handshake.user.game),     // find game by name
+                    async.apply(app.services.artifacts.listNearLocation, geoJsonLocation),  // get nearby by location
+                    _.bind(req.io.emit, req.io, 'nearby:sync')  // send nearby as event on socket, binding 'this'.
+                ], function (err, data) {     // after nearby is sent to the app
                     if (err) throw err;
-                    req.io.join(req.handshake.user.game); // join game room
-                    req.io.respond();  // respond to original request
                 });
+            });
+
         } else {
             app.logger.error("not implemented connection of type : " + req.handshake.user.type);
             req.io.respond();
@@ -57,9 +60,17 @@ module.exports = function(app, config) {
     app.io.route('report', function(req){
         app.logger.debug("socket report : " + req.handshake.session.passport.user + " : \n" + util.inspect(req.data));
         if (req.data && req.data.location){
-            // todo handle new location
+            var geoJsonLocation =  { "type": "Point", "coordinates": [req.data.location.longitude, req.data.location.latitude] };
+            app.services.messaging.emit([req.handshake.user.game, 'players', req.handshake.user.playerName, 'location'], geoJsonLocation);
+            async.waterfall([
+                async.apply(app.services.games.game, req.handshake.user.game),     // find game by name
+                async.apply(app.services.artifacts.listNearLocation, geoJsonLocation),  // get nearby by location
+                _.bind(req.io.emit, req.io, 'nearby:sync')  // send nearby as event on socket, binding 'this'.
+            ], function (err, data) {     // after nearby is sent to the app
+                if (err) throw err;
+                req.io.respond();  // respond to original request
+            });
         }
-        // todo send nearby if changed
     });
 
     // send inventory , nearby with full artifacts lists when there is a change
