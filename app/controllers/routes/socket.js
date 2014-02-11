@@ -30,6 +30,7 @@ module.exports = function(app, config) {
                 app.logger.debug("event received : \n" + util.inspect(this.event) + "\n" + util.inspect(artifact));
                 async.waterfall(syncArtifactsListChain);    // todo dirty : initiate a full sync on any change
             });
+            async.waterfall(syncArtifactsListChain);
             req.io.respond();  // respond to original request
 
             // register to nearby changes (currently all changes in same game)
@@ -40,9 +41,7 @@ module.exports = function(app, config) {
                     async.apply(app.services.games.game, req.handshake.user.game),     // find game by name
                     async.apply(app.services.artifacts.listNearLocation, geoJsonLocation),  // get nearby by location
                     _.bind(req.io.emit, req.io, 'nearby:sync')  // send nearby as event on socket, binding 'this'.
-                ], function (err, data) {     // after nearby is sent to the app
-                    if (err) throw err;
-                });
+                ]);
             });
 
         } else {
@@ -66,10 +65,8 @@ module.exports = function(app, config) {
                 async.apply(app.services.games.game, req.handshake.user.game),     // find game by name
                 async.apply(app.services.artifacts.listNearLocation, geoJsonLocation),  // get nearby by location
                 _.bind(req.io.emit, req.io, 'nearby:sync')  // send nearby as event on socket, binding 'this'.
-            ], function (err, data) {     // after nearby is sent to the app
-                if (err) throw err;
-                req.io.respond();  // respond to original request
-            });
+            ]);
+            req.io.respond();  // respond to original request
         }
     });
 

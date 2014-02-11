@@ -25,7 +25,7 @@ angular.module('player.controllers', ['angular-carousel'])
             if (next.templateUrl !== undefined) {
                 $rootScope.loginPage = next.templateUrl === 'view/login.html';
                 authService.isLoggedIn().then(function(isLoggedIn){
-                    if (!!isLoggedIn === $rootScope.loginPage) {
+                    if (isLoggedIn === $rootScope.loginPage) {
                         // needs a redirection
                         if (isLoggedIn){
                             // redirect to inventory
@@ -126,72 +126,6 @@ player.controllers.scannerController =  function($rootScope, $scope, $log, apiSe
         apiService.pickup(artifactId);
     };
 };
-
-/*
-todo delete (reference only)
- player.controllers.inventoryController =  function($rootScope, $scope, $log, $navigate, apiService) {
-     $scope.title = 'You have';
-     $scope.artifacts = [];
-     $rootScope.$on('api:inventory', function (event, inventory) {
-         $log.debug('inventory refresh');
-         $scope.artifacts = inventory;
-     });
-     $scope.examine = function(artifactName){
-         $navigate.go('/artifact/'+artifactName);
-     };
- };
-
- player.controllers.scannerController =  function($rootScope, $scope, $log, $timeout, apiService) {
-    $scope.artifacts = [];
-    $rootScope.$on('api:nearby', function (event, nearby) {
-        $log.debug('nearby refresh');
-        $scope.artifacts = nearby;
-    });
-
-    $scope.toggleLeftNav = function(){
-        $rootScope.leftNav = !$rootScope.leftNav;
-    };
-
-    $scope.pickup = function(artifactId){
-        $timeout.cancel(timer);
-        $scope.artifacts = _.remove($scope.artifacts, {'name' : artifactId});
-        apiService.pickup(artifactId);
-    };
-};
-
-player.controllers.scannerController =  function($rootScope, $scope, $log, $timeout, apiService) {
-    var timer = $timeout(function(){}, 1);  // init timer with dumb noop
-    function scan(){
-        $log.debug('scanning nearby');
-        apiService.nearby()
-            .then(function(nearby){
-                $scope.artifacts = nearby;
-            })['finally'](function(){
-            timer = $timeout(scan, 5000);
-        });
-    }
-    $scope.$onRootScope('refreshScanner', function(){
-        $log.debug('refreshScanner event received');
-        $timeout.cancel(timer);
-        scan();
-    });
-
-    $scope.toggleLeftNav = function(){
-        $rootScope.leftNav = !$rootScope.leftNav;
-    };
-
-    $scope.pickup = function(artifactId){
-        $timeout.cancel(timer);
-        $scope.artifacts = _.remove($scope.artifacts, {'name' : artifactId});
-        apiService.pickup(artifactId).then(function(){
-            scan();
-            $rootScope.$emit('refreshInventory');
-        });
-    };
-};
-
-*/
-
 
 player.controllers.artifactController =  function($rootScope, $scope, $log, $navigate, apiService, artifact) {
     $log.debug('inspecting artifact', artifact.name);

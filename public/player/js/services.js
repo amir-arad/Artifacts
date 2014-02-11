@@ -22,36 +22,25 @@ angular.module('player.services', ['restangular'])
     })
     .run(function($rootScope, $timeout, $log,  apiService, apiSocket, geoLocationService, alertService) {
         var connected = false;
-        var interval = 5000;  // todo get allow server to modify this
-        var timer = $timeout(angular.noop, 1);  // init timer so that stopReporting() never fails
-        function reportToGame(){
-            apiService.reportToGame()['finally'](function(){     // 'finally' is a reserved word in JavaScript, and IE8 takes it seriously
-                timer = $timeout(reportToGame, interval);
-            });
-        }
-        function stopReporting() {
-            $timeout.cancel(timer);
-        };
-        $rootScope.$on('$destroy', stopReporting);
         // sync logical socket lifecycle to login session
         $rootScope.$on('logged in', function(){
-            $log.debug('logged in detected');
             if (!connected){
-                apiSocket.emit('connect', {}, reportToGame);       // start reporting data after login
+                $log.debug('starting game reporting');
+                apiSocket.emit('connect', {});       // start reporting data after login
                 apiService.startReportToGame();
             }
             connected = true;
         });
-        $rootScope.$on('logged out', function(){
-            $log.debug('logged out detected');
-            stopReporting();
-            if (connected){
+        function cleanup() {
+            if (connected) {
+                $log.debug('cleaning up game reporting');
                 apiService.stopReportToGame();
                 apiSocket.emit('disconnect');
             }
             connected = false;
-        });
-        // apiSocket.forward(['inventory', 'nearby'], $rootScope);
+        }
+        $rootScope.$on('logged out', cleanup);
+        $rootScope.$on('$destroy', cleanup);
     });
 
 
@@ -278,7 +267,7 @@ player.services.authService = function ($log, $rootScope, apiService) {
                 if (user && user.type === "player"){
                     apiService.init(user.game, user.playerName);
                     $rootScope.$emit('logged in');
-                    return user.playerName;
+                    return !! user.playerName;
                 }
                 return null;
             });
@@ -330,8 +319,9 @@ player.services.geoLocationService = function ($window, $q, $rootScope, _) {
         track : function(successCallback, errorCallback, options) {
             var minTimeBetweenCalls =  (options && options.throttle) || 5000;
             return $window.navigator.geolocation.watchPosition(
-                _.compose(scopeApply, _.partial(_.partial, _.throttle(successCallback, minTimeBetweenCalls, {leading: false}))),
-                _.compose(scopeApply, _.partial(_.partial, _.throttle(errorCallback, minTimeBetweenCalls, {leading: false}))),
+                _.compose(scopeApply, _.partial(_.partial, successCallback)),
+             //   _.throttle(_.compose(scopeApply, _.partial(_.partial, successCallback)), minTimeBetweenCalls, {leading: false}),
+                _.throttle(_.compose(scopeApply, _.partial(_.partial, errorCallback)), minTimeBetweenCalls, {leading: false}),
                 options);
         },
         stopTracking : function(watchId) {
