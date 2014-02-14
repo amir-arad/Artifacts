@@ -7,7 +7,8 @@ player.controllers._ = function () {
 
 angular.module('player.controllers', ['angular-carousel'])
     .controller(player.controllers)
-    .config(['$provide', function($provide){   // listener infra for controller-controller communication
+    .config(['$provide', function($provide){
+    // listener infra for controller-controller communication
         $provide.decorator('$rootScope', ['$delegate', function($delegate){
             Object.defineProperty($delegate.constructor.prototype, '$onRootScope', {
                 value: function(name, listener){
@@ -19,7 +20,7 @@ angular.module('player.controllers', ['angular-carousel'])
             return $delegate;
         }]);
     }])
-    .run( function($rootScope, $navigate, authService) {
+    .run( ['$rootScope', '$navigate', 'authService', function($rootScope, $navigate, authService) {
         // register listener to watch route changes
         $rootScope.$on("$routeChangeStart", function(event, next, current) {
             if (next.templateUrl !== undefined) {
@@ -38,31 +39,33 @@ angular.module('player.controllers', ['angular-carousel'])
                 });
             }
         });
-    });
+    }]);
 
 /**
  * The login controller.
  */
-player.controllers.loginController =  function ($rootScope, $scope, $log, $location, $navigate, authService) {
-    $scope.login = function() {
-        $log.debug('login sent', $scope.game, $scope.player, $scope.password);
-        authService.login($scope.game, $scope.player, $scope.password).then(function(){
-            $rootScope.loginPage = false;
-            $navigate.go('/inventory');
-        });
-    };
-};
+player.controllers.loginController =  ['$rootScope', '$scope', '$log', '$navigate', 'authService',
+    function ($rootScope, $scope, $log, $navigate, authService) {
+        $scope.login = function() {
+            $log.debug('login sent', $scope.game, $scope.player, $scope.password);
+            authService.login($scope.game, $scope.player, $scope.password).then(function(){
+                $rootScope.loginPage = false;
+                $navigate.go('/inventory');
+            });
+        };
+    }];
 
 /**
  * The login controller.
  */
-player.controllers.logoutController =  function ($rootScope, $log, $navigate, authService) {
+player.controllers.logoutController =  ['$rootScope', '$log', '$navigate', 'authService',
+    function ($rootScope, $log, $navigate, authService) {
     $log.debug('logout called');
     authService.logout().then(function(){
         $rootScope.loginPage = true;
         $navigate.go('/login');
     });
-};
+}];
 
 
 /**
@@ -71,7 +74,7 @@ player.controllers.logoutController =  function ($rootScope, $log, $navigate, au
  * @param $location
  * @param $navigate
  */
-player.controllers.headerController =  function ($scope, $location, $navigate) {
+player.controllers.headerController =  ['$scope', '$location', '$navigate', function ($scope, $location, $navigate) {
     $scope.getClass = function(path) {
         // seems to not be working so well
         if ($location.path().substr(1, path.length) == path) {
@@ -83,25 +86,15 @@ player.controllers.headerController =  function ($scope, $location, $navigate) {
     $scope.navigate = function(path) {
         $navigate.go('/'+path);
     };
-//    $scope.menu = [{
-//        "title": "Inventory",
-//        "link": "inventory"
-//    }, {
-//        "title": "Look Around",
-//        "link": "nearby"
-//    }, {
-//        "title": "Log out",
-//        "link": "logout"
-//    }];
-};
+}];
 
-player.controllers.alertsController =  function($scope, alertService) {
+player.controllers.alertsController =  ['$scope', 'alertService', function($scope, alertService) {
     $scope.alerts = [];
     alertService.init($scope.alerts);
     $scope.closeAlert = alertService.closeAlert;
-};
+}];
 
-player.controllers.inventoryController =  function($rootScope, $scope, $log, $navigate, apiService) {
+player.controllers.inventoryController =  ['$scope', '$navigate', 'apiService', function($scope, $navigate, apiService) {
     $scope.title = 'You have';
 
     apiService.inventory().then(function(result) {
@@ -111,9 +104,9 @@ player.controllers.inventoryController =  function($rootScope, $scope, $log, $na
     $scope.examine = function(artifactName){
         $navigate.go('/artifact/'+artifactName);
     };
-};
+}];
 
-player.controllers.scannerController =  function($rootScope, $scope, $log, apiService) {
+player.controllers.scannerController =  ['$rootScope', '$scope', 'apiService', function($rootScope, $scope, apiService) {
     apiService.nearby().then(function(result) {
         $scope.artifacts = result;
     });
@@ -125,9 +118,9 @@ player.controllers.scannerController =  function($rootScope, $scope, $log, apiSe
     $scope.pickup = function(artifactId){
         apiService.pickup(artifactId);
     };
-};
+}];
 
-player.controllers.artifactController =  function($rootScope, $scope, $log, $navigate, apiService, artifact) {
+player.controllers.artifactController =  ['$scope', '$navigate', 'apiService', 'artifact', '$log', function($scope, $navigate, apiService, artifact, $log) {
     $log.debug('inspecting artifact', artifact.name);
     $scope.artifact = artifact;
     $scope.inventory = function(){
@@ -136,4 +129,4 @@ player.controllers.artifactController =  function($rootScope, $scope, $log, $nav
     $scope.drop = function(){
         apiService.drop(artifact.name).then($scope.inventory);
     };
-};
+}];

@@ -4,7 +4,7 @@ player.filters = {};
 angular.module('player.filters', []).
     filter(player.filters);
 
-player.filters.rtfctLinky = function($sanitize) {
+player.filters.rtfctLinky = ['$sanitize', function($sanitize) {
     var LINKY_URL_REGEXP =
             /((ftp|https?):\/\/|(mailto:)?[A-Za-z0-9._%+-]+@)\S*[^\s.;,(){}<>]/,
         MAILTO_REGEXP = /^mailto:/;
@@ -50,4 +50,4 @@ player.filters.rtfctLinky = function($sanitize) {
             html.push('</a>');
         }
     };
-};
+}];

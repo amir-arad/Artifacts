@@ -9,9 +9,9 @@ angular.module('player', ['player.controllers', 'player.directives', 'player.fil
         'ngRoute', 'ngAnimate', 'LocalStorageModule', 'ajoslin.mobile-navigate', 'ngSanitize',
         'angular-carousel', 'btford.socket-io'])
     .config(["$provide",function($provide){
-        $provide.decorator("$log", function($delegate, logService){
+        $provide.decorator("$log", ['$delegate', 'logService', function($delegate, logService){
             return logService($delegate);
-        });
+        }]);
     }])
     .config(['$routeProvider', '$locationProvider', '$httpProvider',
         function ($routeProvider, $locationProvider, $httpProvider) {
@@ -21,9 +21,9 @@ angular.module('player', ['player.controllers', 'player.directives', 'player.fil
                     controller: 'loginController',
                     templateUrl: 'view/login.html',
                     resolve: {
-                        isLoggedIn: function (authService) {
+                        isLoggedIn: ['authService', function (authService) {
                             return authService.isLoggedIn();
-                        }
+                        }]
                     }
                 })
                 .when('/logout', {
@@ -34,24 +34,27 @@ angular.module('player', ['player.controllers', 'player.directives', 'player.fil
                     controller: 'inventoryController',
                     templateUrl: 'view/artifactList.html',
                     resolve: {
-                        isLoggedIn: function (authService) {
+                        isLoggedIn: ['authService', function (authService) {
                             return authService.isLoggedIn();
-                        },
-                        ready : function (apiService) {
+                        }],
+                        ready : ['apiService', function (apiService) {
                             return apiService.ready;
-                        }
+                        }]
                     }
                 })
                 .when('/artifact/:id', {
                     controller: 'artifactController',
                     templateUrl: 'view/artifact.html',
                     resolve: {
-                        artifact: function ($route, apiService) {
-                            return apiService.examine($route.current.params.id);
-                        },
-                        ready : function (apiService) {
+                        isLoggedIn: ['authService', function (authService) {
+                            return authService.isLoggedIn();
+                        }],
+                        ready : ['apiService', function (apiService) {
                             return apiService.ready;
-                        }
+                        }],
+                        artifact: ['$route', 'apiService', function ($route, apiService) {
+                            return apiService.examine($route.current.params.id);
+                        }]
                     }
                 })
                 .otherwise({
