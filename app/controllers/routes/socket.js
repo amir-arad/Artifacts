@@ -14,8 +14,8 @@ module.exports = function(app, config) {
             return callback('already sent to player');
         } else {
             playerRTData[attribute] = newArtifactIdsStr;
+            return callback(null, artifacts);
         }
-        return callback(null, artifacts);
     };
     //    req.handshake.user == {
     //        type : 'player'
@@ -52,6 +52,7 @@ module.exports = function(app, config) {
                 async.waterfall(getAsyncWaterfallToNearbySync(req, geoJsonLocation));
             };
 
+            // in addition to global disconnection logic, also clean up internal listeners
             req.io.on('disconnect', function(){
                 app.services.messaging.off([req.handshake.user.game, 'artifacts', 'nearby', '*'], nearbyListener);
                 app.services.messaging.off([req.handshake.user.game, 'artifacts', req.handshake.user.playerName, '*'], inventoryListener);
