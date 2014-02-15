@@ -135,6 +135,7 @@ module.exports = function (app, config){
 
     this.drop = function(player, artifact, callback) {
         if (artifact.owner !== player.name) return callback(new Error('Artifact '+artifact.name+' cannot be dropped by ' + player.name));
+        if (!player.location) return callback(new Error('Player '+player.name+' has no registered location'));
         this.update(artifact, {location : player.location, owner : null}, callback);
     };
 

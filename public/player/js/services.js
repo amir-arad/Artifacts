@@ -91,15 +91,17 @@ angular.module('player.services', ['restangular'])
             var inventory = [];
             var nearby = [];
 
-            apiSocket.on('inventory:sync', function (artifacts) {
+            apiSocket.on('inventory:sync', function (artifacts, ack) {
                 $log.debug('inventory refresh');
                 replaceRepoArtifacts(inventory, artifacts);
                 inventoryInit.resolve();
+                ack();
             });
-            apiSocket.on('nearby:sync', function (artifacts) {
+            apiSocket.on('nearby:sync', function (artifacts, ack) {
                 $log.debug('nearby refresh');
                 replaceRepoArtifacts(nearby, artifacts);
                 nearbyInit.resolve();
+                ack();
             });
             var locationWatch = -1;
             var accelerationWatch = -1;

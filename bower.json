@@ -1,24 +1,29 @@
 {
-    "name": "Artifacts",
-    "description": "Artifacts - live games solutions system",
-    "version": "0.1.0",
-    "dependencies": {
-        "angular-carousel": "git://github.com/revolunet/angular-carousel",
-        "font-awesome": "latest",
-        "topcoat": "latest",
-        "angular-sanitize": "latest",
-        "angular-local-storage": "latest",
-        "angular-mobile-nav": "latest",
-        "restangular": "latest",
-        "lodash": "latest",
-        "angular": "1.2.6",
-        "angular-resource": "latest",
-        "angular-animate": "latest",
-        "angular-cookies": "latest",
-        "angular-mocks": "latest",
-        "angular-route": "latest",
-        "angular-http-auth": "latest",
-        "angular-ui-utils": "latest",
-        "angular-socket-io" : "latest"
-    }
+  "name": "Artifacts",
+  "description": "Artifacts - live games solutions system",
+  "version": "0.1.0",
+  "dependencies": {
+    "angular-carousel": "git://github.com/revolunet/angular-carousel",
+    "angular-leaflet-directive": "latest",
+    "leaflet": "latest",
+    "font-awesome": "latest",
+    "topcoat": "latest",
+    "angular-sanitize": "latest",
+    "angular-local-storage": "latest",
+    "angular-mobile-nav": "latest",
+    "restangular": "latest",
+    "lodash": "latest",
+    "angular": "1.2.6",
+    "angular-resource": "latest",
+    "angular-animate": "latest",
+    "angular-cookies": "latest",
+    "angular-mocks": "latest",
+    "angular-route": "latest",
+    "angular-http-auth": "latest",
+    "angular-ui-utils": "latest",
+    "angular-socket-io": "latest"
+  },
+  "resolutions": {
+    "jquery": "2.1.0"
+  }
 }

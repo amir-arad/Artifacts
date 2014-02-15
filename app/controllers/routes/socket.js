@@ -7,15 +7,17 @@ module.exports = function(app, config) {
     // optimizing data sent to player
     // keep cached list of artifact IDs sent to the player
     // compare to the cache before sending new data
-    function useCaching(attribute, game, player, artifacts, callback) {
-        var newArtifactIdsStr = _.pluck(artifacts, '_id').sort().toString();
-        var playerRTData = app.services.players.getPlayerRTData(game, player);
-        if (playerRTData[attribute] === newArtifactIdsStr){
-            return callback('already sent to player');
-        } else {
-            playerRTData[attribute] = newArtifactIdsStr;
-            return callback(null, artifacts);
-        }
+    function sendSyncWithCache(attribute, game, player, socket, artifacts, callback) {
+        socket.get(attribute, function (err, cached) {
+            if (err) return callback(err);
+            var newArtifactIdsStr = _.pluck(artifacts, '_id').sort().toString();
+            if (cached === newArtifactIdsStr) return callback('already sent to player');
+            socket.emit(attribute + ':sync', artifacts, function (foobar) {   // callback with no arguments triggers a client bug (client won't ack)
+                socket.set(attribute, newArtifactIdsStr, function () {
+                    return callback(null, artifacts);
+                });
+            });
+        });
     };
     //    req.handshake.user == {
     //        type : 'player'
@@ -36,8 +38,9 @@ module.exports = function(app, config) {
             var syncArtifactsListChain = [
                 async.apply(app.services.games.game, req.handshake.user.game),     // find game by name
                 async.apply(app.services.artifacts.listByOwner, req.handshake.user.playerName),  // get inventory by game and player
-                async.apply(useCaching, 'inventory', req.handshake.user.game, req.handshake.user.playerName),  // filter if same as last sent event
-                _.bind(req.io.emit, req.io, 'inventory:sync')  // send inventory as event on socket, binding 'this'.
+                async.apply(sendSyncWithCache, 'inventory', req.handshake.user.game, req.handshake.user.playerName, req.io)  // filter if same as last sent event
+//                _.bind(req.io.emit, req.io, 'inventory:sync'),  // send inventory as event on socket, binding 'this'.
+//                async.apply(cache, 'inventory', req.handshake.user.game, req.handshake.user.playerName)  // filter if same as last sent event
             ];
 
             // register to future changes in inventory
@@ -80,8 +83,9 @@ module.exports = function(app, config) {
         return [
             async.apply(app.services.games.game, req.handshake.user.game),     // find game by name
             async.apply(app.services.artifacts.listNearLocation, lastKnownLocation),  // get nearby by location
-            async.apply(useCaching, 'nearby', req.handshake.user.game, req.handshake.user.playerName),  // filter if same as last sent event
-            _.bind(req.io.emit, req.io, 'nearby:sync')  // send nearby as event on socket, binding 'this'.
+            async.apply(sendSyncWithCache, 'nearby', req.handshake.user.game, req.handshake.user.playerName, req.io)  // filter if same as last sent event
+//            _.bind(req.io.emit, req.io, 'nearby:sync'),  // send nearby as event on socket, binding 'this'.
+//            async.apply(cache, 'nearby', req.handshake.user.game, req.handshake.user.playerName),  // filter if same as last sent event
         ];
     }
 

@@ -18,10 +18,11 @@
         "postinstall": "bower install"
     },
     "dependencies": {
+        "coffee-script" : "latest",
         "express": "latest",
         "eventemitter2" : "latest",
         "socket.io": "latest",
-        "express.io": "latest",
+        "express.io": "git://github.com/amir-arad/express.io",
         "mongodb": "latest",
         "connect-mongo": "latest",
         "connect-flash": "latest",
