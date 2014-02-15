@@ -57,8 +57,8 @@ module.exports = function(app, config) {
     });
 
     app.io.route('report', function(req){
-        app.logger.debug("socket report : " + req.handshake.session.passport.user + " : \n" + util.inspect(req.data));
-        if (req.data && req.data.location){
+        if (req.data.location){
+          //  app.logger.debug("location report : " + req.handshake.session.passport.user + " : \n" + util.inspect(req.data));
             var geoJsonLocation =  { "type": "Point", "coordinates": [req.data.location.longitude, req.data.location.latitude] };
             app.services.messaging.emit([req.handshake.user.game, 'players', req.handshake.user.playerName, 'location'], geoJsonLocation);
             async.waterfall([
@@ -67,6 +67,10 @@ module.exports = function(app, config) {
                 _.bind(req.io.emit, req.io, 'nearby:sync')  // send nearby as event on socket, binding 'this'.
             ]);
             req.io.respond();  // respond to original request
+        }
+        if (req.data.movement){
+            app.services.messaging.emit([req.handshake.user.game, 'players', req.handshake.user.playerName, 'movement'], req.data.movement);
+            app.logger.debug("movement report : " + req.handshake.session.passport.user + " : " + req.data.movement);
         }
     });
 

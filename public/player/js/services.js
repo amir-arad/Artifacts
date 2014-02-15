@@ -19,7 +19,7 @@ angular.module('player.services', ['restangular'])
             return response;
         });
     })
-    .run(function($rootScope, $timeout, $log,  apiService, apiSocket, geoLocationService, alertService) {
+    .run(['$rootScope', '$log',  'apiService', 'apiSocket', function($rootScope, $log,  apiService, apiSocket) {
         var connected = false;
         // sync logical socket lifecycle to login session
         $rootScope.$on('logged in', function(){
@@ -40,7 +40,7 @@ angular.module('player.services', ['restangular'])
         }
         $rootScope.$on('logged out', cleanup);
         $rootScope.$on('$destroy', cleanup);
-    })
+    }])
     .factory('_',  function () {
         return window._; // assumes loDash has already been loaded on the page
     }).factory('apiSocket', function ($log, socketFactory) {
@@ -58,8 +58,8 @@ angular.module('player.services', ['restangular'])
  * @param Restangular
  * @returns {{init: Function, login: Function}}
  */
-    .factory('apiService', ['$log', '$q', 'Restangular', '_', 'localStorageService', 'apiSocket', 'geoLocationService', 'alertService',
-        function ($log, $q, Restangular, _, localStorageService, apiSocket, geoLocationService, alertService) {
+    .factory('apiService', ['$log', '$q', 'Restangular', '_', 'localStorageService', 'apiSocket', 'geoLocationService', 'gyroAccelService', 'alertService',
+        function ($log, $q, Restangular, _, localStorageService, apiSocket, geoLocationService, gyroAccelService, alertService) {
             var baseGame;     //    /games/:gameId
             var basePlayer;   //    /games/:gameId/players/:playerId
             function baseArtifact(artifactId) {
@@ -102,6 +102,7 @@ angular.module('player.services', ['restangular'])
                 nearbyInit.resolve();
             });
             var locationWatch = -1;
+            var accelerationWatch = -1;
             var service = {
                 ready : $q.all([inventoryInit.promise, nearbyInit.promise]),   // this data-less promise will resolve after both inventory and nearby are set
                 init : function initApiService (gameId, playerId) {
@@ -128,22 +129,41 @@ angular.module('player.services', ['restangular'])
                 },
                 startReportToGame: function startReportToGameFromApi(){
                     $log.debug('reporting');
+                    var vectorPower = function(x, y, z){
+                        return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
+                    }
+                    // getting gyro acceleration
+                    // calculating "movement" which is the average of aceleration shifts during the time period
+                    accelerationWatch = gyroAccelService.track(function(events){
+                        var lastEvent =  events.shift();
+                        var sum = _.reduce(events, function(result, event) {
+                            // deriviate acceleration over time: delta acceleration / delta time
+                            result += vectorPower(
+                                event.accelerationIncludingGravity.x - lastEvent.accelerationIncludingGravity.x,
+                                event.accelerationIncludingGravity.y - lastEvent.accelerationIncludingGravity.y,
+                                event.accelerationIncludingGravity.z - lastEvent.accelerationIncludingGravity.z)
+                                / (event.timeStamp - lastEvent.timeStamp);
+                            lastEvent = event;
+                            return result;
+                        }, 0);
+                        // average
+                        var avgMovement = Math.floor((sum * 300) / (events.length));    // 300 was chosen by simple trial and error (only include actual human movements)
+                        if (avgMovement){
+                            apiSocket.emit('report', {movement : avgMovement});
+                        }
+                    }, {throttleEvent : 200, throttleCallback : 2000});
+
+
                     // getting geolocation
-                    geoLocationService.query()
-                        .then(function (position){
-                            locationWatch = geoLocationService.track(function(position){
-                                apiSocket.emit('report', {location : position.coords});
-                            }, function(error){
-                                alertService.add("error obtaining position : " + error.message);
-                            }, {throttle : 5000, enableHighAccuracy : false});
-                            apiSocket.emit('report', {location : position.coords});
-                        }).catch(function(error){
-                            alertService.add("error obtaining position : " + error.message);
-                        });
-                    // TODO add gyro support
+                    locationWatch = geoLocationService.track(function(position){
+                        apiSocket.emit('report', {location : position.coords});
+                    }, function(error){
+                        alertService.add("error obtaining position : " + error.message);
+                    }, {throttle : 5000, enableHighAccuracy : false});
                 },
                 stopReportToGame: function stopReportToGameFromApi(){
-                    geoLocationService.stopTracking(locationWatch)
+                    geoLocationService.stopTracking(locationWatch);
+                    gyroAccelService.stopTracking(accelerationWatch);
                 },
                 inventory: function inventoryFromApi() {
                     return $q.when(inventory);  // wrap with promise to hide implementation
@@ -296,15 +316,43 @@ angular.module('player.services', ['restangular'])
                 return defer.promise;
             },
             track : function(successCallback, errorCallback, options) {
-                var minTimeBetweenCalls =  (options && options.throttle) || 5000;
+                var minTimeBetweenCalls =  (options && options.throttle) || 30000;
                 return $window.navigator.geolocation.watchPosition(
-                    _.compose(scopeApply, _.partial(_.partial, successCallback)),
-                    //   _.throttle(_.compose(scopeApply, _.partial(_.partial, successCallback)), minTimeBetweenCalls, {leading: false}),
+                    _.throttle(_.compose(scopeApply, _.partial(_.partial, successCallback)), minTimeBetweenCalls, {leading: false}),
                     _.throttle(_.compose(scopeApply, _.partial(_.partial, errorCallback)), minTimeBetweenCalls, {leading: false}),
                     options);
             },
             stopTracking : function(watchId) {
                 return $window.navigator.geolocation.clearWatch(watchId);
+            }
+        };
+    }])
+    .factory('gyroAccelService', ['$window', '$rootScope', '_', function ($window, $rootScope, _) {
+        if (!$window.DeviceMotionEvent){
+            throw new Error("motion sensor required");
+        }
+        var appenders = {};
+        return {
+            track : function(callback, options) {
+                var minTimeBetweenSamples =  (options && options.throttleEvent) || 100;
+                var minTimeBetweenCallback =  (options && options.throttleCallback) || 5000;
+                var events = [];
+                var appender = _.throttle(_.bind(Array.prototype.push, events), minTimeBetweenSamples, {leading: false});
+                $window.addEventListener('devicemotion', appender);
+                var handler = function () {
+                    if (events.length) {
+                        var oldEvents = events.splice(0, events.length);
+                        $rootScope.$apply(_.partial(callback, oldEvents));
+                    }
+                };
+                var trackId = $window.setInterval(handler, minTimeBetweenCallback);
+                appenders[trackId] = appender;
+                return trackId;
+            },
+            stopTracking : function(trackId) {
+                window.removeEventListener('devicemotion', appenders[trackId]);
+                delete appenders[trackId];
+                $window.clearInterval(trackId);
             }
         };
     }])
