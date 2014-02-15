@@ -76,10 +76,10 @@ angular.module('admin', ['admin.controllers', 'admin.directives', 'admin.filters
                             return authService.isLoggedIn();
                         },
                         artifacts: function (artifactsService) {
-                            return artifactsService.getArtifactsbyOwner('everywhere');
+                            return artifactsService.getArtifactsbyOwner(null);
                         },
                         owner: function () {
-                            return 'everywhere';
+                            return null;
                         }
                     }
                 })

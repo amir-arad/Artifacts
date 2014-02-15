@@ -14,16 +14,28 @@ var async = require('async');
 var util = require('util');
 
 module.exports = function (app, config){
+    var _that = this;
 
-    var locationCache = {};
+    var realtimeCache = {};
 
     function locationKey(game, player) {
         return game + '.' + player;
     }
 
-    app.services.messaging.on(['*', 'players', '*', 'location'], function(location) {
-        app.logger.debug("event received : \n" + util.inspect(this.event) + "\n" + util.inspect(location));
-        locationCache[locationKey(this.event[0], this.event[2])] = location;
+    this.getPlayerRTData = function(game, player){
+        var result = realtimeCache[locationKey(game, player)];
+        if (!result){
+            realtimeCache[locationKey(game, player)] = result = {location:null, movement:0};
+        }
+        return result;
+    }
+    this.deletePlayerRTData = function(game, player){
+        delete realtimeCache[locationKey(game, player)];
+    }
+    // cache all events of type {{game}}.{{player}}.players.{{attribute}}
+    app.services.messaging.on(['*', 'players', '*', '*'], function(value) {
+        app.logger.debug(this.event[3] + " event cached on player : " + util.inspect(value));
+        _that.getPlayerRTData(this.event[0], this.event[2])[this.event[3]] = value;
     });
 
     /**
@@ -31,9 +43,6 @@ module.exports = function (app, config){
      */
     var dao = new (require('../dal/Dao'))(app, {'collectionName':'games'});
 
-    this.getPlayerLocation = function(game, playerName) {
-        return locationCache[locationKey(game, playerName)];
-    }
 
     /**
      * Find player by id
@@ -42,7 +51,9 @@ module.exports = function (app, config){
         if (!game) return new Error('Must specify game');
         var player = game.players[playerName];
         if (!player) return callback(new app.errors.NotFound('Failed to load player ' + playerName));
-        player.location = this.getPlayerLocation(game.name, playerName);
+        var playerRTData = _that.getPlayerRTData(game.name, playerName);
+        player.location = playerRTData.location;
+        player.movement = playerRTData.movement;
         return callback(null, player);
     };
 

@@ -132,7 +132,7 @@ angular.module('player.services', ['restangular'])
                     var vectorPower = function(x, y, z){
                         return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
                     }
-                    // getting gyro acceleration
+                    // listen to gyro acceleration
                     // calculating "movement" which is the average of aceleration shifts during the time period
                     accelerationWatch = gyroAccelService.track(function(events){
                         var lastEvent =  events.shift();
@@ -153,8 +153,15 @@ angular.module('player.services', ['restangular'])
                         }
                     }, {throttleEvent : 200, throttleCallback : 2000});
 
-
                     // getting geolocation
+                    geoLocationService.query()     // query geolocation directly at first
+                        .then(function (position){
+                            apiSocket.emit('report', {location : position.coords});
+                        }).catch(function(error){
+                            alertService.add("error obtaining position : " + error.message);
+                        });
+
+                    // then passively listen to geolocation changes and update every 5 seconds
                     locationWatch = geoLocationService.track(function(position){
                         apiSocket.emit('report', {location : position.coords});
                     }, function(error){
