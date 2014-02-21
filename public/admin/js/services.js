@@ -474,14 +474,16 @@ var module = angular.module('admin.services', ['restangular'])
         var artifactMarkers = [];
         var playerMarkers = [];
         var allMarkers = [];
-        var init = $q.defer();
+        var artifactMarkersInit = $q.defer();
+        var playerMarkersInit = $q.defer();
         apiSocket.on('ground:sync', function (newArtifacts, ack) {
             $log.debug('ground refresh');
             // convert artifacts to map markers and save to artifactMarkers
             artifactMarkers = _.map(newArtifacts, function (artifact) {
                 return {
                     icon: {
-                        iconUrl: '/img/potion.png'
+                        iconUrl: '/img/potion.png',
+                        iconSize:     [71, 99]
                     },
                     lng: artifact.location.coordinates[0],
                     lat: artifact.location.coordinates[1],
@@ -491,11 +493,45 @@ var module = angular.module('admin.services', ['restangular'])
                 };
             });
             Array.prototype.splice.apply(allMarkers, [0, allMarkers.length].concat(playerMarkers.concat(artifactMarkers)));
-            init.resolve();
+            artifactMarkersInit.resolve();
             ack();
         });
+        var player2Marker = function (player) {
+            return {
+                icon: {
+                    iconUrl: '/img/player.png',
+                    iconSize:     [52, 125]
+                },
+                lng: player.location.coordinates[0],
+                lat: player.location.coordinates[1],
+                message: player.name,
+                id : player.name,
+                draggable: false
+            };
+        };
+        apiSocket.on('players:sync', function (newPlayers) {
+            $log.debug('players refresh');
+            // convert players to map markers and save to playerMarkers
+            playerMarkers = _.map(newPlayers, player2Marker);
+            // important : players first (indexes of players needs to match)
+            Array.prototype.splice.apply(allMarkers, [0, allMarkers.length].concat(playerMarkers.concat(artifactMarkers)));
+            playerMarkersInit.resolve();
+        });
+        apiSocket.on('players:set', function (player) {
+            $log.debug('player update');
+            // convert artifacts to map markers
+            var marker = player2Marker(player);
+            var idx = _.findIndex(playerMarkers, { 'id': marker.id });
+            if (~idx){    // exists. replace in playerMarkers and allMarkers (indexes of players match)
+                playerMarkers[idx] = marker;
+                allMarkers[idx] = marker
+            } else {      // new. add and re-make allMarkers (indexes of players needs to match)
+                playerMarkers.push(marker);
+                Array.prototype.splice.apply(allMarkers, [0, allMarkers.length].concat(playerMarkers.concat(artifactMarkers)));
+            }
+        });
         return {
-            ready : init.promise,
+            ready : $q.all([artifactMarkersInit.promise, playerMarkersInit.promise]),
             // bind to context by return value
             markers: allMarkers,
             defaultPosition : { // some game site

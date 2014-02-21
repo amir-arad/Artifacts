@@ -18,19 +18,24 @@ module.exports = function (app, config){
 
     var realtimeCache = {};
 
-    function locationKey(game, player) {
+    function playerKey(game, player) {
         return game + '.' + player;
     }
 
+    this.getGameRTData = function(game){
+        return _.filter(_.values(realtimeCache), function(rtData){
+            return rtData.game === game;
+        });
+    }
     this.getPlayerRTData = function(game, player){
-        var result = realtimeCache[locationKey(game, player)];
+        var result = realtimeCache[playerKey(game, player)];
         if (!result){
-            realtimeCache[locationKey(game, player)] = result = {location:null, movement:0};
+            realtimeCache[playerKey(game, player)] = result = {game:game, name:player, location:null, movement:0};
         }
         return result;
     };
     this.deletePlayerRTData = function(game, player){
-        delete realtimeCache[locationKey(game, player)];
+        delete realtimeCache[playerKey(game, player)];
     };
     // cache all events of type {{game}}.{{player}}.players.{{attribute}}
     app.services.messaging.on(['*', 'players', '*', '*'], function(value) {

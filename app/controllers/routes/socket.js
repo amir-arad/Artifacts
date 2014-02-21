@@ -62,19 +62,36 @@ module.exports = function(app, config) {
             async.waterfall(syncArtifactsListChain);
             req.io.respond();  // respond to original request
 
-        } else {  // if (req.handshake.user.type === 'player')
+        } else {  // not a player, meaning admin or storyteller
             // listener for artifacts on ground
             var syncGroundArtifacts = function () {
                 async.waterfall(getAsyncWaterfallToSyncArtifactsByLocation(req, null, 'ground'));
             };
+
+            // listener for player realtime data changes and send only that player to the client
+            var updatePlayer = function(){
+                var player = this.event[2];
+                // give space for the event to affect RTData
+                setImmediate(function(){
+                    req.io.emit('players:set', app.services.players.getPlayerRTData(req.handshake.user.game, player));
+                });
+            };
+            // send all players data to client
+            var syncPlayers = function () {
+                req.io.emit('players:sync', app.services.players.getGameRTData(req.handshake.user.game));
+            }
+            var playersSyncJob = setInterval(syncPlayers, 30 * 1000);
             cleanup = _.once(function(){
+                clearInterval(playersSyncJob);
                 app.services.messaging.off([req.handshake.user.game, 'artifacts', 'nearby', '*'], syncGroundArtifacts);
+                app.services.messaging.off([req.handshake.user.game, 'players', '*', '*'], updatePlayer);
                 req.io.leave(req.handshake.user.game); // leave game room
             });
 
             app.services.messaging.on([req.handshake.user.game, 'artifacts', 'nearby', '*'], syncGroundArtifacts);
+            app.services.messaging.on([req.handshake.user.game, 'players', '*', '*'], updatePlayer);
             syncGroundArtifacts();
-
+            syncPlayers();
             req.io.respond();
         }
 
