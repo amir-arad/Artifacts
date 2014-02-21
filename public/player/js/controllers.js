@@ -23,8 +23,8 @@ angular.module('player.controllers', ['angular-carousel'])
     .run( ['$rootScope', '$navigate', 'authService', function($rootScope, $navigate, authService) {
         // register listener to watch route changes
         $rootScope.$on("$routeChangeStart", function(event, next, current) {
-            if (next.templateUrl !== undefined) {
-                $rootScope.loginPage = next.templateUrl === 'view/login.html';
+            if (next.controller !== undefined) {
+                $rootScope.loginPage = next.controller === 'loginController';
                 authService.isLoggedIn().then(function(isLoggedIn){
                     if (isLoggedIn === $rootScope.loginPage) {
                         // needs a redirection
@@ -44,13 +44,19 @@ angular.module('player.controllers', ['angular-carousel'])
 /**
  * The login controller.
  */
-player.controllers.loginController =  ['$rootScope', '$scope', '$log', '$navigate', 'authService',
-    function ($rootScope, $scope, $log, $navigate, authService) {
+player.controllers.loginController =  ['$rootScope', '$scope', '$log', '$location', 'authService',
+    function ($rootScope, $scope, $log, $location, authService) {
+        // TODO here for presentation only
+        $scope.game = 'sampleGame';
+        $scope.player = 'bob';
+        $scope.password = 'king123';
+
         $scope.login = function() {
             $log.debug('login sent', $scope.game, $scope.player, $scope.password);
             authService.login($scope.game, $scope.player, $scope.password).then(function(){
-                $rootScope.loginPage = false;
-                $navigate.go('/inventory');
+               //  $rootScope.loginPage = false;
+                $location.path('/inventory');
+               //  $navigate.go('/inventory');
             });
         };
     }];
@@ -58,12 +64,13 @@ player.controllers.loginController =  ['$rootScope', '$scope', '$log', '$navigat
 /**
  * The login controller.
  */
-player.controllers.logoutController =  ['$rootScope', '$log', '$navigate', 'authService',
-    function ($rootScope, $log, $navigate, authService) {
+player.controllers.logoutController =  ['$rootScope', '$log', '$location', 'authService',
+    function ($rootScope, $log, $location, authService) {
     $log.debug('logout called');
     authService.logout().then(function(){
-        $rootScope.loginPage = true;
-        $navigate.go('/login');
+      //  $rootScope.loginPage = true;
+        $location.path('/login');
+      //  $navigate.go('/login');
     });
 }];
 

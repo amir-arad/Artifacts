@@ -20,34 +20,83 @@ angular.module('player.services', ['restangular'])
         });
     })
     .run(['$rootScope', '$log',  'apiService', 'apiSocket', function($rootScope, $log,  apiService, apiSocket) {
-        var connected = false;
+        var initialized = false;
         // sync logical socket lifecycle to login session
         $rootScope.$on('logged in', function(){
-            if (!connected){
+            if (!initialized){
                 $log.debug('starting game reporting');
-                apiSocket.emit('connect', {});       // start reporting data after login
-                apiService.startReportToGame();
+                apiSocket.connect().then(function(apiSocket){
+                    apiSocket.emit('init');       // start reporting data after login
+                    apiService.startReportToGame();
+                });
             }
-            connected = true;
+            initialized = true;
         });
         function cleanup() {
-            if (connected) {
+            if (initialized) {
                 $log.debug('cleaning up game reporting');
                 apiService.stopReportToGame();
-                apiSocket.emit('disconnect');
+                apiSocket.emit('destroy');
             }
-            connected = false;
+            initialized = false;
         }
         $rootScope.$on('logged out', cleanup);
         $rootScope.$on('$destroy', cleanup);
     }])
     .factory('_',  function () {
         return window._; // assumes loDash has already been loaded on the page
-    }).factory('apiSocket', function ($log, socketFactory) {
+    }).factory('apiSocket', function ($log, $q, socketFactory) {
         $log.debug('creating API socket');
+        // the API socket available as a service before the connection begins.
+        // it is important not to connect the socket before being logged in,
+        // otherwise the server rejects the connection.
+        // calling connect() on the result will trigger the connection and return a promise to a connected socket
+        // add/remove listeners is supported at all times
+        var defSoc = $q.defer();
+        var sPromise = defSoc.promise;
+        var realSoc = false;
         var result = socketFactory({
-            prefix: 'api:'
+            prefix: 'api:',
+            ioSocket : {
+                on : function (){
+                    var a = arguments;
+                    if (realSoc){
+                        realSoc.on.apply(realSoc, a);
+                    } else{
+                        defSoc.promise.then(function(realSoc){
+                            realSoc.on.apply(realSoc, a);
+                        });
+                    }
+                },
+                removeListener : function (){
+                    var a = arguments;
+                    if (realSoc){
+                        realSoc.removeListener.apply(realSoc, a);
+                    } else{
+                        defSoc.promise.then(function(realSoc){
+                            realSoc.removeListener.apply(realSoc, a);
+                        });
+                    }
+                },
+                emit : function (){
+                    if (realSoc){
+                        realSoc.emit.apply(realSoc, arguments);
+                    }  // ignore offline emits
+                }
+            }
         });
+        result.connect = function(){
+            if (!realSoc){
+                var defConnect = $q.defer();
+                realSoc = window.io.connect();
+                realSoc.on("connect", function(){
+                    defConnect.resolve(result);
+                });
+                defSoc.resolve(realSoc);
+                return defConnect.promise;
+            }
+            return $q.when(result);
+        };
         return result;
     })
 
@@ -248,7 +297,7 @@ angular.module('player.services', ['restangular'])
  * @param $log angular's logging service
  * @param Restangular REST service
  */
-    .factory('authService', ['$log', '$rootScope', 'apiService', function($log, $rootScope, apiService) {
+    .factory('authService', ['$log', '$rootScope', 'apiService', 'apiSocket', function($log, $rootScope, apiService, apiSocket) {
         var service = {
             logout: function () {
                 $log.debug('logout called');
@@ -272,12 +321,12 @@ angular.module('player.services', ['restangular'])
             },
             isLoggedIn: function(){
                 return apiService.getUser().then(function(user){
-                    if (user && user.type === "player"){
+                    if (user && user !== 'null' && user.type === "player"){
                         apiService.init(user.game, user.playerName);
                         $rootScope.$emit('logged in');
-                        return !! user.playerName;
+                        return true;
                     }
-                    return null;
+                    return false;
                 });
             }
         };

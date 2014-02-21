@@ -19,16 +19,16 @@ angular.module('admin.controllers', ['angular-carousel'])
             return $delegate;
         }]);
     }])
-    .run( function($rootScope, $location, $navigate, authService) {
+    .run( function($rootScope, $navigate, authService) {
         // register listener to watch route changes
-        $rootScope.$on( "$routeChangeStart", function(event, next, current) {
+        $rootScope.$on("$routeChangeStart", function(event, next, current) {
             if (next.templateUrl !== undefined) {
                 $rootScope.loginPage = next.templateUrl === 'view/login.html';
                 authService.isLoggedIn().then(function(isLoggedIn){
-                    if ((isLoggedIn? true : false) === $rootScope.loginPage) {
+                    if (!isLoggedIn === !$rootScope.loginPage) {
                         // needs a redirection
                         if (isLoggedIn){
-                            $rootScope.$emit('login');
+                            $rootScope.$emit('login');   // TODO unused?
                             // redirect to inventory
                             $navigate.go('/game');
                         } else {
@@ -49,7 +49,7 @@ admin.controllers.loginController =  function ($rootScope, $scope, $log, $locati
         $log.debug('login sent', $scope.game, $scope.password);
         authService.login($scope.game, $scope.password).then(function(){
             $rootScope.loginPage = false;
-            $rootScope.$emit('login');
+            $rootScope.$emit('login');     // TODO unused?
             $navigate.go('/game');
         });
     };
@@ -61,7 +61,7 @@ admin.controllers.loginController =  function ($rootScope, $scope, $log, $locati
 admin.controllers.logoutController =  function ($rootScope, $log, $navigate, authService) {
     $log.debug('logout called');
     authService.logout().then(function(){
-        $rootScope.$emit('logout');
+        $rootScope.$emit('logout');           // TODO unused?
         $navigate.go('/login');
     });
 };

@@ -2,6 +2,7 @@
 var async = require('async');
 var util = require('util');
 var _ = require('underscore');
+var CONNECTION_INIT = "init", CONNECTION_DESTROY = "destroy";
 module.exports = function(app, config) {
 
     // optimizing data sent to player
@@ -28,7 +29,7 @@ module.exports = function(app, config) {
 
     // https://github.com/techpines/express.io/tree/master/lib#socketrequest
     // https://github.com/techpines/express.io/tree/master/examples#server-appjs-5
-    app.io.route('connect', function(req){            // todo not the correct event name. perhaps "sync" or something
+    app.io.route(CONNECTION_INIT, function(req){            // todo not the correct event name. perhaps "sync" or something
         app.logger.debug("socket connect : \n" + util.inspect(req.handshake.session.passport.user));
 
         if (req.handshake.user.type === 'player'){
@@ -56,9 +57,11 @@ module.exports = function(app, config) {
             };
 
             // in addition to global disconnection logic, also clean up internal listeners
-            req.io.on('disconnect', function(){
+            req.io.on(CONNECTION_DESTROY, function(){
                 app.services.messaging.off([req.handshake.user.game, 'artifacts', 'nearby', '*'], nearbyListener);
                 app.services.messaging.off([req.handshake.user.game, 'artifacts', req.handshake.user.playerName, '*'], inventoryListener);
+                app.services.players.deletePlayerRTData(req.handshake.user.game, req.handshake.user.playerName); // invalidate player realtime data
+                req.io.leave(req.handshake.user.game); // leave game room
             });
             app.services.messaging.on([req.handshake.user.game, 'artifacts', 'nearby', '*'], nearbyListener);
             app.services.messaging.on([req.handshake.user.game, 'artifacts', req.handshake.user.playerName, '*'], inventoryListener);
@@ -72,10 +75,8 @@ module.exports = function(app, config) {
         }
     });
 
-    app.io.route('disconnect', function(req){
+    app.io.route(CONNECTION_DESTROY, function(req){
         app.logger.debug("socket disconnect : \n" + util.inspect(req.handshake.session.passport.user));
-        app.services.players.deletePlayerRTData(req.handshake.user.game, req.handshake.user.playerName); // invalidate player realtime data
-        req.io.leave(req.handshake.user.game); // leave game room
         req.io.respond();
     });
 

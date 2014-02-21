@@ -1,8 +1,5 @@
-var admin = admin || {};
-admin.services = {};
 
-angular.module('admin.services', ['restangular'])
-    .factory(admin.services)
+var module = angular.module('admin.services', ['restangular'])
     // configure restangular
     .config(function(RestangularProvider) {
         RestangularProvider.setRestangularFields({
@@ -19,12 +16,38 @@ angular.module('admin.services', ['restangular'])
             }
             return response;
         });
+    })
+    .run(['$rootScope', '$log',  'apiService', 'apiSocket', function($rootScope, $log,  apiService, apiSocket) {
+        var connected = false;
+        // sync logical socket lifecycle to login session
+        $rootScope.$on('logged in', function(){
+            if (!connected){
+                $log.debug('starting game reporting');
+                apiSocket.emit('connect', {});       // start reporting data after login
+                apiService.startReportToGame();
+            }
+            connected = true;
+        });
+        function cleanup() {
+            if (connected) {
+                $log.debug('cleaning up game reporting');
+                apiService.stopReportToGame();
+                apiSocket.emit('disconnect');
+            }
+            connected = false;
+        }
+        $rootScope.$on('logged out', cleanup);
+        $rootScope.$on('$destroy', cleanup);
+    }])
+    .factory('_',  function () {
+        return window._; // assumes loDash has already been loaded on the page
+    }).factory('apiSocket', function ($log, socketFactory) {
+        $log.debug('creating API socket');
+        var result = socketFactory({
+            prefix: 'api:'
+        });
+        return result;
     });
-
-
-admin.services._ = function () {
-    return window._; // assumes loDash has already been loaded on the page
-};
 
 var baseGame;     //    /games/:gameId
 
@@ -53,8 +76,23 @@ function enrichArtifactFromApi(artifact) {
  * @param Restangular
  * @returns {{init: Function, login: Function}}
  */
-admin.services.apiService = function ($log, Restangular, _, localStorageService) {
+module.factory('apiService', function ($log, Restangular, _, localStorageService) {
 
+
+    function replaceRepo(repository, newItems) {
+        Array.prototype.splice.apply(repository, [0, repository.length].concat(newItems));
+    }
+
+    var groundInit = $q.defer();
+    var ground = [];
+
+    apiSocket.on('ground:sync', function (artifacts, ack) {
+        $log.debug('ground refresh');
+        var enrichedArtifacts = _.forEach(newArtifacts, enrichArtifactFromApi);
+        replaceRepo(ground, artifacts);
+        groundInit.resolve();
+        ack();
+    });
 
     var service = {
         init : function initApiService (gameId) {
@@ -152,10 +190,10 @@ admin.services.apiService = function ($log, Restangular, _, localStorageService)
     };
     service.init(localStorageService.get('gameId'));
     return service;
-};
+});
 
 
-admin.services.artifactsService = function (apiService) {
+module.factory('artifactsService', function (apiService) {
     var service = {
 //        artifact CRUD + list
         getArtifactsbyOwner: function getArtifactsbyOwner(owner){
@@ -179,7 +217,7 @@ admin.services.artifactsService = function (apiService) {
     };
 
     return service;
-};
+});
 
 
 if (Error.captureStackTrace){  // only works in chrome
@@ -202,7 +240,7 @@ if (Error.captureStackTrace){  // only works in chrome
  * custom logging solution
  */
 // todo customize https://github.com/siosio/consoleLink to match
-admin.services.logService = function () {
+module.factory('logService', function () {
     return function($delegate){
         var stackdepth = 3;
         function pathFromUrl(url){
@@ -240,19 +278,20 @@ admin.services.logService = function () {
             }
         };
     };
-};
+});
 
 /**
  * Launch schemas resource
  * @param $log angular's logging service
  * @param Restangular REST service
  */
-admin.services.authService = function ($log, apiService) {
+module.factory('authService', function ($log, apiService) {
     var service = {
         logout: function () {
             $log.debug('logout called');
             return apiService.logout().then(function(){
-                $log.debug('logged out');
+                $log.debug('logout executed');
+                $rootScope.$emit('logged out');
                 apiService.init(null);
             });
         },
@@ -261,7 +300,10 @@ admin.services.authService = function ($log, apiService) {
             return service.isLoggedIn().then(function(loggedIn){
                 if (!loggedIn){
                     apiService.init(gameId);
-                    return apiService.login(password);
+                    return apiService.login(password).then(function(){
+                        $log.debug('loggin executed');
+                        $rootScope.$emit('logged in');
+                    });
                 }
             });
         },
@@ -269,18 +311,19 @@ admin.services.authService = function ($log, apiService) {
             return apiService.getUser().then(function(user){
                 if (user && user !== 'null' && user.type !== "player"){
                     apiService.init(user.game);
+                    $rootScope.$emit('logged in');
                     return true;
                 }
-                return null;
+                return false;
             });
         }
     };
 
     return service;
-};
+});
 
 
-admin.services.HttpErrorHandlerService = function ($q, $log, alertService) {
+module.factory('HttpErrorHandlerService', function ($q, $log, alertService) {
     var errorResponses = {
         "400" : { "type": "error", "message": "Bad Request.	The request cannot be fulfilled due to bad syntax"},
         "403" : { "type": "error", "message": "Access denied. You don't have the required permissions"},
@@ -304,10 +347,10 @@ admin.services.HttpErrorHandlerService = function ($q, $log, alertService) {
     };
 
     return service;
-};
+});
 
 
-admin.services.alertService = function ($rootScope, $timeout) {
+module.factory('alertService', function ($rootScope, $timeout) {
     var alerts = [];
     var alertService = {
         init: function (alertsArg){
@@ -325,5 +368,5 @@ admin.services.alertService = function ($rootScope, $timeout) {
     };
 
     return alertService;
-};
+});
 
