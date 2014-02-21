@@ -45,6 +45,9 @@ angular.module('admin.controllers', ['angular-carousel'])
  * The login controller.
  */
 admin.controllers.loginController =  function ($rootScope, $scope, $log, $location, $navigate, authService) {
+    // TODO here for presentation only
+    $scope.game = 'sampleGame';
+    $scope.password = '1234';
     $scope.login = function() {
         $log.debug('login sent', $scope.game, $scope.password);
         authService.login($scope.game, $scope.password).then(function(){
@@ -137,6 +140,126 @@ admin.controllers.playerListController =  function($rootScope, $scope, $log, $na
     };
 };
 
+
+// TODO use game location marker
+// TODO https://github.com/leaflet-extras/leaflet-providers
+// http://tombatossals.github.io/angular-leaflet-directive/examples/layers-example.html
+// http://tombatossals.github.io/angular-leaflet-directive/#!/examples/tiles
+admin.controllers.groundController = function($scope, mapService, position) {
+    $scope.center =  {
+        lat: position.latitude || mapService.defaultPosition.lat,
+        lng: position.longitude || mapService.defaultPosition.lng,
+        zoom: 17
+    };
+
+    $scope.markers =  mapService.markers;
+    $scope.layers = {
+        baselayers: {
+            cycle: {
+                name: 'OpenCycleMap',
+                type: 'xyz',
+                url: 'http://{s}.tile.opencyclemap.org/cycle/{z}/{x}/{y}.png',
+                layerOptions: {
+                    subdomains: ['a', 'b', 'c'],
+                    attribution: '© OpenCycleMap contributors - © OpenStreetMap contributors',
+                    continuousWorld: true
+                }
+            },
+            osm: {
+                name: 'OpenStreetMap',
+                type: 'xyz',
+                url: 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                layerOptions: {
+                    subdomains: ['a', 'b', 'c'],
+                    attribution: '© OpenStreetMap contributors',
+                    continuousWorld: true
+                }
+            },
+            googleTerrain: {
+                name: 'Google Terrain',
+                layerType: 'TERRAIN',
+                type: 'google'
+            },
+            googleHybrid: {
+                name: 'Google Hybrid',
+                layerType: 'HYBRID',
+                type: 'google'
+            },
+            googleRoadmap: {
+                name: 'Google Streets',
+                layerType: 'ROADMAP',
+                type: 'google'
+            },
+            cloudmade1: {
+                name: 'Cloudmade Night Commander',
+                type: 'xyz',
+                url: 'http://{s}.tile.cloudmade.com/{key}/{styleId}/256/{z}/{x}/{y}.png',
+                layerParams: {
+                    key: '007b9471b4c74da4a6ec7ff43552b16f',
+                    styleId: 999
+                },
+                layerOptions: {
+                    subdomains: ['a', 'b', 'c'],
+                    continuousWorld: true
+                }
+            },
+            cloudmade2: {
+                name: 'Cloudmade Tourist',
+                type: 'xyz',
+                url: 'http://{s}.tile.cloudmade.com/{key}/{styleId}/256/{z}/{x}/{y}.png',
+                layerParams: {
+                    key: '007b9471b4c74da4a6ec7ff43552b16f',
+                    styleId: 7
+                },
+                layerOptions: {
+                    subdomains: ['a', 'b', 'c'],
+                    continuousWorld: true
+                }
+            }
+        },
+        overlays : {
+            /*                wms: {
+             name: 'EEUU States (WMS)',
+             type: 'wms',
+             visible: true,
+             url: 'http://suite.opengeo.org/geoserver/usa/wms',
+             layerParams: {
+             layers: 'usa:states',
+             format: 'image/png',
+             transparent: true
+             }
+             }*/
+        }
+    };
+
+    $scope.defaults = {
+        minZoom: 12,
+        doubleClickZoom: true,
+        scrollWheelZoom: true,
+        attributionControl: false
+
+        /*,
+         icon: {
+         url: 'http://cdn.leafletjs.com/leaflet-0.6.4/images/marker-icon.png',
+         retinaUrl: 'http://cdn.leafletjs.com/leaflet-0.6.4/images/marker-icon@2x.png',
+         size: [25, 41],
+         anchor: [12, 40],
+         popup: [0, -40],
+         shadow: {
+         url: 'http://cdn.leafletjs.com/leaflet-0.6.4/images/marker-shadow.png',
+         retinaUrl: 'http://cdn.leafletjs.com/leaflet-0.6.4/images/marker-shadow.png',
+         size: [41, 41],
+         anchor: [12, 40]
+         }
+         },
+         path: {
+         weight: 10,
+         opacity: 1,
+         color: '#0000ff'
+         }*/
+    };
+};
+
 admin.controllers.artifactListController = function($scope, apiService, artifactsService, artifacts, owner) {
     $scope.artifacts = artifacts;
     $scope.newArtifact = {};
@@ -164,7 +287,7 @@ admin.controllers.artifactListController = function($scope, apiService, artifact
     $scope.open = function (artifactsId) {
         $navigate.go('/artifact/' + artifactsId);
     };
-}
+};
 
 admin.controllers.playerController =  function($scope, apiService, artifactsService, player, artifacts) {
     $scope.player = player;

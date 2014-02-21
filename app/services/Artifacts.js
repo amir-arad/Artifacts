@@ -28,6 +28,7 @@ module.exports = function (app, config){
     function id(game, name){
         return game._id.toHexString() + '-' + name.toLowerCase();
     }
+
     /**
      * Find artifact by name
      */
@@ -120,7 +121,7 @@ module.exports = function (app, config){
                 app.services.messaging.emit([game.name, 'artifacts', dst, 'add'], newArtifact);  // someone has gained an artifact
                 return callback(null, newArtifact);
             });
-    }
+    };
 
     this.give = function(game, from, artifact, to, callback) {
         if ('everywhere' !== to) return callback(new Error('Artifact '+artifact.name+' cannot be given to ' + to));
@@ -162,8 +163,11 @@ module.exports = function (app, config){
      * @returns {*}
      */
     this.listNearLocation = function(location, game, callback) {
-        if (!callback) callback = location; // todo improve using "is function" on location. no location supplied
-        dao.list({'location' : {'$near' : {'$geometry' : location , '$maxDistance' : 20}}}, callback);
+        var query = {'game' : game._id, 'owner' : null};
+        if (location) {
+            query.location = {'$near' : {'$geometry' : location , '$maxDistance' : 20}};
+        }
+        dao.list(query, callback);
     };
 
     /**

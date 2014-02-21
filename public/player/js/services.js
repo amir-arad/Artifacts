@@ -54,7 +54,7 @@ angular.module('player.services', ['restangular'])
         // add/remove listeners is supported at all times
         var defSoc = $q.defer();
         var sPromise = defSoc.promise;
-        var realSoc = false;
+        var realSoc = null;
         var result = socketFactory({
             prefix: 'api:',
             ioSocket : {
@@ -182,7 +182,7 @@ angular.module('player.services', ['restangular'])
                     $log.debug('reporting');
                     var vectorPower = function(x, y, z){
                         return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2) + Math.pow(z, 2));
-                    }
+                    };
                     // listen to gyro acceleration
                     // calculating "movement" which is the average of aceleration shifts during the time period
                     accelerationWatch = gyroAccelService.track(function(events){
@@ -192,8 +192,7 @@ angular.module('player.services', ['restangular'])
                             result += vectorPower(
                                 event.accelerationIncludingGravity.x - lastEvent.accelerationIncludingGravity.x,
                                 event.accelerationIncludingGravity.y - lastEvent.accelerationIncludingGravity.y,
-                                event.accelerationIncludingGravity.z - lastEvent.accelerationIncludingGravity.z)
-                                / (event.timeStamp - lastEvent.timeStamp);
+                                event.accelerationIncludingGravity.z - lastEvent.accelerationIncludingGravity.z) / (event.timeStamp - lastEvent.timeStamp);
                             lastEvent = event;
                             return result;
                         }, 0);
@@ -204,18 +203,17 @@ angular.module('player.services', ['restangular'])
                         }
                     }, {throttleEvent : 200, throttleCallback : 2000});
 
+                    var sendLocationToServer = function(position){
+                        apiSocket.emit('report', {"location" : { "type": "Point", "coordinates": [position.coords.longitude, position.coords.latitude]}});
+                    };
                     // getting geolocation
                     geoLocationService.query()     // query geolocation directly at first
-                        .then(function (position){
-                            apiSocket.emit('report', {location : _.pick(position.coords, 'longitude', 'latitude')});
-                        }).catch(function(error){
+                        .then(sendLocationToServer).catch(function(error){
                             alertService.add("error obtaining position : " + error.message);
                         });
 
                     // then passively listen to geolocation changes and update every 5 seconds
-                    locationWatch = geoLocationService.track(function(position){
-                        apiSocket.emit('report', {location : position.coords});
-                    }, function(error){
+                    locationWatch = geoLocationService.track(sendLocationToServer, function(error){
                         alertService.add("error obtaining position : " + error.message);
                     }, {throttle : 5000, enableHighAccuracy : false});
                 },
@@ -227,7 +225,7 @@ angular.module('player.services', ['restangular'])
                     return $q.when(inventory);  // wrap with promise to hide implementation
                 },
                 nearby: function nearbyFromApi() {
-                    return $q.when(nearby)  // wrap with promise to hide implementation
+                    return $q.when(nearby);  // wrap with promise to hide implementation
                 },
                 examine: function examineFromApi(artifactId) {
                     // get /games/:gameId/artifacts/:artifactId
@@ -461,7 +459,7 @@ angular.module('player.services', ['restangular'])
         };
 
         return alertService;
-    }])
+    }]);
 
 
 

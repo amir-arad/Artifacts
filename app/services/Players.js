@@ -28,10 +28,10 @@ module.exports = function (app, config){
             realtimeCache[locationKey(game, player)] = result = {location:null, movement:0};
         }
         return result;
-    }
+    };
     this.deletePlayerRTData = function(game, player){
         delete realtimeCache[locationKey(game, player)];
-    }
+    };
     // cache all events of type {{game}}.{{player}}.players.{{attribute}}
     app.services.messaging.on(['*', 'players', '*', '*'], function(value) {
         app.logger.debug(this.event[3] + " event cached on player : " + util.inspect(value));

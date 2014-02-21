@@ -22,7 +22,7 @@
         "express": "latest",
         "eventemitter2" : "latest",
         "socket.io": "latest",
-        "express.io": "git://github.com/amir-arad/express.io",
+        "express.io": "latest",
         "mongodb": "latest",
         "connect-mongo": "latest",
         "connect-flash": "latest",

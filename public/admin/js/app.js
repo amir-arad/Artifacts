@@ -6,7 +6,8 @@ var admin = admin || {
 };
 
 angular.module('admin', ['admin.controllers', 'admin.directives', 'admin.filters', 'admin.services',
-        'ngRoute', 'ngAnimate', 'LocalStorageModule', 'ajoslin.mobile-navigate', 'ngSanitize', 'angular-carousel'])
+        'ngRoute', 'ngAnimate', 'LocalStorageModule', 'ajoslin.mobile-navigate', 'ngSanitize', 'angular-carousel',
+        'btford.socket-io', 'leaflet-directive'])
     .config(["$provide",function($provide){
         $provide.decorator("$log", function($delegate, logService){
             return logService($delegate);
@@ -69,6 +70,18 @@ angular.module('admin', ['admin.controllers', 'admin.directives', 'admin.filters
                     }
                 })
                 .when('/ground', {
+                    controller: 'groundController',
+                    templateUrl: 'view/groundView.html',
+                    resolve: {
+                        position: function (geoLocationService) {
+                            return geoLocationService.query();
+                        },
+                        mapDataReady: function (mapService) {
+                            return mapService.ready;
+                        }
+                    }
+                })
+/*                .when('/ground', {
                     controller: 'artifactListController',
                     templateUrl: 'view/artifactList.html',
                     resolve: {
@@ -82,7 +95,7 @@ angular.module('admin', ['admin.controllers', 'admin.directives', 'admin.filters
                             return null;
                         }
                     }
-                })
+                })*/
 //                .when('/artifact/:id', {
 //                    controller: 'artifactController',
 //                    templateUrl: 'view/artifact.html',

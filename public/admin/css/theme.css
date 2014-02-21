@@ -354,3 +354,14 @@ body.leftNav .topcoat-navigation-bar, body.leftNav #content {
     margin-top:1rem;
     padding:0rem 0rem 1rem 1rem;
 }
+
+.leaflet-bar a,
+.leaflet-bar a:hover,
+.leaflet-bar a:link,
+.leaflet-bar a:visited {
+    color: #000000;
+}
+
+.leaflet-popup-content {
+    color: #000000;
+}
