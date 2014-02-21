@@ -56,13 +56,19 @@ module.exports = function(app, config) {
                 async.waterfall(getAsyncWaterfallToNearbySync(req, geoJsonLocation));
             };
 
+            var connected = true;
+            function disconnect(){
+                if (connected){
+                    app.services.messaging.off([req.handshake.user.game, 'artifacts', 'nearby', '*'], nearbyListener);
+                    app.services.messaging.off([req.handshake.user.game, 'artifacts', req.handshake.user.playerName, '*'], inventoryListener);
+                    app.services.players.deletePlayerRTData(req.handshake.user.game, req.handshake.user.playerName); // invalidate player realtime data
+                    req.io.leave(req.handshake.user.game); // leave game room
+                    connected = false;
+                }
+            }
             // in addition to global disconnection logic, also clean up internal listeners
-            req.io.on(CONNECTION_DESTROY, function(){
-                app.services.messaging.off([req.handshake.user.game, 'artifacts', 'nearby', '*'], nearbyListener);
-                app.services.messaging.off([req.handshake.user.game, 'artifacts', req.handshake.user.playerName, '*'], inventoryListener);
-                app.services.players.deletePlayerRTData(req.handshake.user.game, req.handshake.user.playerName); // invalidate player realtime data
-                req.io.leave(req.handshake.user.game); // leave game room
-            });
+            req.io.on(CONNECTION_DESTROY, disconnect);
+            req.io.on('disconnect', disconnect);
             app.services.messaging.on([req.handshake.user.game, 'artifacts', 'nearby', '*'], nearbyListener);
             app.services.messaging.on([req.handshake.user.game, 'artifacts', req.handshake.user.playerName, '*'], inventoryListener);
             req.io.join(req.handshake.user.game); // join game room
@@ -76,7 +82,7 @@ module.exports = function(app, config) {
     });
 
     app.io.route(CONNECTION_DESTROY, function(req){
-        app.logger.debug("socket disconnect : \n" + util.inspect(req.handshake.session.passport.user));
+        app.logger.debug("socket logical disconnect : \n" + util.inspect(req.handshake.session.passport.user));
         req.io.respond();
     });
 
