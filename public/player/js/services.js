@@ -207,7 +207,8 @@ angular.module('player.services', ['restangular'])
                     // getting geolocation
                     geoLocationService.query()     // query geolocation directly at first
                         .then(function (position){
-                            apiSocket.emit('report', {location : position.coords});
+                            var locationObj = _.pick(position.coords, 'longitude', 'latitude');
+                            apiSocket.emit('report', {location : locationObj});
                         }).catch(function(error){
                             alertService.add("error obtaining position : " + error.message);
                         });
