@@ -46,6 +46,7 @@ module.exports = function (app, config, passport, authorizeFallback){
             return (req.player && req.player.password === password)?
                 new User("player", req.game.name, req.player.name) : null;
         }, function(req){
+            // TODO use app.services.messaging to invalidate this session on login from another session
             return checkUserType(req, "player") && checkUserGame(req) &&
                 req.user.playerName &&
                 (req.player && req.user.playerName === req.player.name ||
