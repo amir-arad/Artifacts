@@ -25,7 +25,8 @@ module.exports = function(app, config) {
 
     // https://github.com/techpines/express.io/tree/master/lib#socketrequest
     // https://github.com/techpines/express.io/tree/master/examples#server-appjs-5
-    app.io.route(CONNECTION_INIT, function(req){            // todo not the correct event name. perhaps "sync" or something
+    app.io.route(CONNECTION_INIT, function(req){
+        var cleanup;
         app.logger.debug("socket connect : \n" + util.inspect(req.handshake.session.passport.user));
         if (req.handshake.user.type === 'player'){
             app.services.players.deletePlayerRTData(req.handshake.user.game, req.handshake.user.playerName); // invalidate player realtime data
@@ -49,15 +50,12 @@ module.exports = function(app, config) {
                 async.waterfall(getAsyncWaterfallToSyncArtifactsByLocation(req, location, 'nearby'));
             };
 
-            var cleanupPlayer = _.once(function(){
+            cleanup = _.once(function(){
                 app.services.messaging.off([req.handshake.user.game, 'artifacts', 'nearby', '*'], nearbyListener);
                 app.services.messaging.off([req.handshake.user.game, 'artifacts', req.handshake.user.playerName, '*'], inventoryListener);
                 app.services.players.deletePlayerRTData(req.handshake.user.game, req.handshake.user.playerName); // invalidate player realtime data
                 req.io.leave(req.handshake.user.game); // leave game room
             });
-            // in addition to global disconnection logic, also clean up internal listeners
-            req.io.on(CONNECTION_DESTROY, cleanupPlayer);
-            req.io.on('disconnect', cleanupPlayer);
             app.services.messaging.on([req.handshake.user.game, 'artifacts', 'nearby', '*'], nearbyListener);
             app.services.messaging.on([req.handshake.user.game, 'artifacts', req.handshake.user.playerName, '*'], inventoryListener);
             req.io.join(req.handshake.user.game); // join game room
@@ -69,19 +67,20 @@ module.exports = function(app, config) {
             var syncGroundArtifacts = function () {
                 async.waterfall(getAsyncWaterfallToSyncArtifactsByLocation(req, null, 'ground'));
             };
-            var cleanupAdmin = _.once(function(){
+            cleanup = _.once(function(){
                 app.services.messaging.off([req.handshake.user.game, 'artifacts', 'nearby', '*'], syncGroundArtifacts);
                 req.io.leave(req.handshake.user.game); // leave game room
             });
-            // in addition to global disconnection logic, also clean up internal listeners
-            req.io.on(CONNECTION_DESTROY, cleanupAdmin);
-            req.io.on('disconnect', cleanupAdmin);
 
             app.services.messaging.on([req.handshake.user.game, 'artifacts', 'nearby', '*'], syncGroundArtifacts);
             syncGroundArtifacts();
 
             req.io.respond();
         }
+
+        // in addition to global disconnection logic, also clean up internal listeners
+        req.io.on(CONNECTION_DESTROY, cleanup);
+        req.io.on('disconnect', cleanup);
     });
 
     app.io.route(CONNECTION_DESTROY, function(req){
