@@ -59,12 +59,13 @@ module.exports.query =  function query(options, queryArg) {
         if (queryArg instanceof ObjectId){
             return module.exports.queryById(options, queryArg, false);
         } else {
+            // assuming it's a query
+            return queryArg;
+            // TODO: a lot of queries may not work!
             var idCandidate = queryArg[options.id];
             if (idCandidate){
                 return module.exports.query(options, idCandidate);
             } else {
-                // assuming it's a query
-                return queryArg;
             }
         }
     } else {

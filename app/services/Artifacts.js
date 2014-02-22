@@ -103,10 +103,26 @@ module.exports = function (app, config){
                     } else {
                         app.services.messaging.emit([game.name, 'artifacts', 'nearby', 'add'], newArtifact);
                     }
+                } else if (artifact.location != newArtifact.location){
+                    // artifact was moved around
+                    app.services.messaging.emit([game.name, 'artifacts', 'nearby', 'set'], newArtifact);
                 }
                 return callback(null, newArtifact);
             });
         });
+    };
+
+    this.move = function(game, fromLocation, toLocation, artifact, callback) {
+        if (artifact.owner !== null) return callback(new Error('Artifact '+artifact.name+' cannot be moved as it is owned by ' + artifact.owner));
+        dao.selectAndUpdateFields(
+            {_id:artifact._id, 'game' : game._id, owner : null, 'location' : {'$near' : {'$geometry' : fromLocation , '$maxDistance' : 20}}},
+            {'location' : toLocation},
+            ['location'],
+            function(err, artifact){
+                if (err) return callback(err);
+                app.services.messaging.emit([game.name, 'artifacts', 'nearby', 'set'], artifact);
+                return callback(null, artifact);
+            });
     };
 
     this.transfer = function(game, src, artifact, dst, callback){

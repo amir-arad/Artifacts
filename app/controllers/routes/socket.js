@@ -79,7 +79,7 @@ module.exports = function(app, config) {
             // send all players data to client
             var syncPlayers = function () {
                 req.io.emit('players:sync', app.services.players.getGameRTData(req.handshake.user.game));
-            }
+            };
             var playersSyncJob = setInterval(syncPlayers, 30 * 1000);
             cleanup = _.once(function(){
                 clearInterval(playersSyncJob);

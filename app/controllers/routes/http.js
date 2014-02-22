@@ -71,6 +71,7 @@ module.exports = function(app, config, passport) {
     app.post('/games/:gameId/artifacts', formData, auth.storyteller.authorize, artifacts.create);
     app.get('/games/:gameId/artifacts/:artifactId', nocache, auth.player.authorize, artifacts.show);
     app.put('/games/:gameId/artifacts/:artifactId', formData, auth.storyteller.authorize, artifacts.update);
+    app.put('/games/:gameId/artifacts/:artifactId/location', formData, auth.storyteller.authorize, artifacts.move);
     app.del('/games/:gameId/artifacts/:artifactId', auth.storyteller.authorize, artifacts.destroy);
     // todo artifact pick, drop w/ playerAuth
 

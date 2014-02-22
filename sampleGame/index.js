@@ -23,7 +23,7 @@ var sampleGame = {
         rock : {name : 'rock', description : 'a rock', owner : 'alice', body : 'The rock feels hard and cold in your hand.', icon: 'rock.icon.jpg', assets : []},
         paper : {name : 'paper', description : 'a piece of paper', owner : 'bob', body : 'A wrinkled sheet of paper that may yet prove important...', icon: 'paper.icon.jpg', assets : []},
         scissors : {name : 'scissors', description : 'a pair of cissors', owner : 'zander', body : 'The scissors are sharp. Something about them seems wrong...', icon: 'scissors.icon.jpg', assets : []},
-        magnet : {name : 'magnet', description : 'a magnet', owner : 'everywhere', body : 'The magnet can pick up heavy pieces of iron.', icon: 'magnet.icon.jpg', assets : []}
+        magnet : {name : 'magnet', description : 'a magnet', location : {"type" : "Point", "coordinates" : [34.8022964, 32.1201244]}, body : 'The magnet can pick up heavy pieces of iron.', icon: 'magnet.icon.jpg', assets : []}
     }
 };
 

@@ -146,12 +146,19 @@ admin.controllers.playerListController =  function($rootScope, $scope, $log, $na
 // http://tombatossals.github.io/angular-leaflet-directive/examples/layers-example.html
 // http://tombatossals.github.io/angular-leaflet-directive/#!/examples/tiles
 admin.controllers.groundController = function($scope, mapService, position) {
+
+    $scope.$on('leafletDirectiveMarker.dragend', mapService.handleDrag);
+    $scope.events= {
+        map: {
+            enable: ['dragend'],
+                logic: 'emit'
+        }
+    };
     $scope.center =  {
         lat: position.latitude || mapService.defaultPosition.lat,
         lng: position.longitude || mapService.defaultPosition.lng,
         zoom: 17
     };
-
     $scope.markers =  mapService.markers;
     $scope.layers = {
         baselayers: {

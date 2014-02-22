@@ -80,6 +80,16 @@ module.exports = function (app, config){
     /**
      * Pick up an item from the nearby context
      */
+    this.move  = function(req, res, next) {
+        app.services.artifacts.move(req.game, req.body.from, req.body.to, req.artifact, function(err, artifact) {
+            if (err) return next(err);
+            res.jsonp(artifact);
+        });
+    };
+
+    /**
+     * Pick up an item from the nearby context
+     */
     this.pickup  = function(req, res, next) {
         app.services.artifacts.pickup(req.game, req.player, req.artifact, function(err, artifact) {
             if (err) return next(err);

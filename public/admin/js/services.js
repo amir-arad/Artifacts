@@ -224,6 +224,11 @@ var module = angular.module('admin.services', ['restangular'])
                 // post /games/:gameId/artifacts/:artifactId
                 return baseGame.all('artifacts').post(artifact);
             },
+            moveArtifact: function moveArtifactFromApi(artifactId, from, to){
+                // put '/games/:gameId/artifacts/:artifactId/location'
+                return baseGame.one('artifacts', artifactId)
+                    .customPUT({"from" : from, "to" : to}, 'location');
+            },
             saveArtifact: function saveArtifactFromApi(artifact){
                 // put /games/:gameId/artifacts/:artifactId
                 return artifact.put(); //baseGame.one('artifacts', artifact.name).put(artifact);
@@ -470,16 +475,16 @@ var module = angular.module('admin.services', ['restangular'])
 //    html: 'Using <strong>Bold text as an icon</strong>',
 //    popupAnchor:  [0, 0]
 //}
-    .factory('mapService', function ($rootScope, $log, $q, apiSocket) {
-        var artifactMarkers = [];
-        var playerMarkers = [];
-        var allMarkers = [];
+    .factory('mapService', function ($rootScope, $log, $q, apiSocket, apiService) {
+        var artifactMarkers = {};
+        var playerMarkers = {};
+        var allMarkers = {data:{}};
         var artifactMarkersInit = $q.defer();
         var playerMarkersInit = $q.defer();
         apiSocket.on('ground:sync', function (newArtifacts, ack) {
             $log.debug('ground refresh');
             // convert artifacts to map markers and save to artifactMarkers
-            artifactMarkers = _.map(newArtifacts, function (artifact) {
+            artifactMarkers = _.indexBy(_.map(newArtifacts, function (artifact) {
                 return {
                     icon: {
                         iconUrl: '/img/potion.png',
@@ -488,11 +493,12 @@ var module = angular.module('admin.services', ['restangular'])
                     lng: artifact.location.coordinates[0],
                     lat: artifact.location.coordinates[1],
                     message: artifact.name,
-                    id : artifact._id,
-                    draggable: false // TODO add drag'n'drop
+                    id : artifact.name,
+                    origLoc : artifact.location,
+                    draggable: true
                 };
-            });
-            Array.prototype.splice.apply(allMarkers, [0, allMarkers.length].concat(playerMarkers.concat(artifactMarkers)));
+            }), _.partial(_.uniqueId, 'rtfct'));
+            allMarkers.data =  _.merge(playerMarkers, artifactMarkers);
             artifactMarkersInit.resolve();
             ack();
         });
@@ -510,16 +516,15 @@ var module = angular.module('admin.services', ['restangular'])
                 lng: player.location.coordinates[0],
                 lat: player.location.coordinates[1],
                 message: player.name,
-                id : player.name,
                 draggable: false
             };
         };
         apiSocket.on('players:sync', function (newPlayers) {
             $log.debug('players refresh');
             // convert players to map markers and save to playerMarkers
-            playerMarkers = _.map(_.filter(newPlayers, 'location'), player2Marker);
-            // important : players first (indexes of players needs to match)
-            Array.prototype.splice.apply(allMarkers, [0, allMarkers.length].concat(playerMarkers.concat(artifactMarkers)));
+            playerMarkers = _.indexBy(_.map(_.filter(newPlayers, 'location'), player2Marker)
+                , _.partial(_.uniqueId, 'plyr'));
+            allMarkers.data =  _.merge(playerMarkers, artifactMarkers);
             playerMarkersInit.resolve();
         });
         apiSocket.on('players:set', function (player) {
@@ -527,14 +532,8 @@ var module = angular.module('admin.services', ['restangular'])
             if (player.location) {
                 // convert artifacts to map markers
                 var marker = player2Marker(player);
-                var idx = _.findIndex(playerMarkers, { 'id': marker.id });
-                if (~idx){    // exists. replace in playerMarkers and allMarkers (indexes of players match)
-                    playerMarkers[idx] = marker;
-                    allMarkers[idx] = marker
-                } else {      // new. add and re-make allMarkers (indexes of players needs to match)
-                    playerMarkers.push(marker);
-                    Array.prototype.splice.apply(allMarkers, [0, allMarkers.length].concat(playerMarkers.concat(artifactMarkers)));
-                }
+                playerMarkers[marker.id] = marker;
+                allMarkers.data[marker.id] = marker;
             }
         });
         return {
@@ -544,6 +543,17 @@ var module = angular.module('admin.services', ['restangular'])
             defaultPosition : { // some game site
                 lng: 34.811,
                 lat: 32.100
+            },
+            handleDrag : function(event, data){
+                var markerId = data.markerName;
+                if (!markerId.indexOf('rtfct')){    // starts with 'rtfct'
+                    var markerData = artifactMarkers[markerId];
+                    var from = markerData.origLoc;
+                    var to = _.clone(from, true);
+                    to.coordinates[0] = data.leafletEvent.target._latlng.lng;
+                    to.coordinates[1] = data.leafletEvent.target._latlng.lat;
+                    apiService.moveArtifact(markerData.id, from, to);
+                }
             }
         };
     });
