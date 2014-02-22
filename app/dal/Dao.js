@@ -95,7 +95,7 @@ module.exports = function (app, options){
          * @param entity is used both for query and for values
          */
         _this.updateFields = function(entity, fields, callback){
-            return _this.selectAndUpdateFields(entity, entity, fields, callback);
+            return _this.selectAndUpdateFields(entity._id, entity, fields, callback);
         };
 
         /**

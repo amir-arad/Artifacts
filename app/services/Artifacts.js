@@ -43,13 +43,12 @@ module.exports = function (app, config){
 
     function validateOwnerOrLocation(game, artifact){
         if (artifact.owner) {
-            artifact.location = null;
-            // TODO check super locations ('everywhere')
-            if (!game.players[artifact.owner] && artifact.owner !== 'everywhere'){
+            delete artifact.location;
+            if (!game.players[artifact.owner]){
                 return new Error('Illegal owner ' + artifact.owner);
             }
         } else {
-            artifact.owner = null;
+            delete artifact.owner;
             if (!artifact.location) return new Error('No owner nor location ' + artifact);
         }
         return null;
@@ -139,17 +138,6 @@ module.exports = function (app, config){
             });
     };
 
-    this.give = function(game, from, artifact, to, callback) {
-        if ('everywhere' !== to) return callback(new Error('Artifact '+artifact.name+' cannot be given to ' + to));
-        // TODO add location query, should be ok to give to nearby players
-        return this.transfer(game, from, artifact, to, callback);
-    };
-
-    this.take = function(game, to, artifact, from, callback) {
-        if ('everywhere' !== from) return callback(new Error('Artifact '+artifact.name+' cannot be taken from ' + from));
-        return this.transfer(game, from, artifact, to, callback);
-    };
-
     this.drop = function(player, artifact, callback) {
         if (artifact.owner !== player.name) return callback(new Error('Artifact '+artifact.name+' cannot be dropped by ' + player.name));
         if (!player.location) return callback(new Error('Player '+player.name+' has no registered location'));
@@ -172,7 +160,6 @@ module.exports = function (app, config){
 
     /**
      * List of artifacts near a location
-     * for now, simply query the everywhere context
      * @param game
      * @param location [optional]
      * @param callback
