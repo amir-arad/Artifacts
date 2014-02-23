@@ -112,7 +112,7 @@ module.exports = function (app, config){
     };
 
     this.move = function(game, fromLocation, toLocation, artifact, callback) {
-        if (artifact.owner !== null) return callback(new Error('Artifact '+artifact.name+' cannot be moved as it is owned by ' + artifact.owner));
+        if (artifact.owner) return callback(new Error('Artifact '+artifact.name+' cannot be moved as it is owned by ' + artifact.owner));
         dao.selectAndUpdateFields(
             {_id:artifact._id, 'game' : game._id, owner : null, 'location' : {'$near' : {'$geometry' : fromLocation , '$maxDistance' : 20}}},
             {'location' : toLocation},
@@ -145,7 +145,7 @@ module.exports = function (app, config){
     };
 
     this.pickup = function(game, player, artifact, callback) {
-        if (artifact.owner !== null) return callback(new Error('Artifact '+artifact.name+' cannot be picked up as it is owned by ' + artifact.owner));
+        if (artifact.owner) return callback(new Error('Artifact '+artifact.name+' cannot be picked up as it is owned by ' + artifact.owner));
         dao.selectAndUpdateFields(
             {_id:artifact._id, 'game' : game._id, owner : null, 'location' : {'$near' : {'$geometry' : player.location , '$maxDistance' : 20}}},
             {owner : player.name},
