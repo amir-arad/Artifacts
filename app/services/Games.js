@@ -88,7 +88,7 @@ module.exports = function (app, config){
             app.services.artifacts.listByGame,
             function(artifacts, cb){
                 // remove artifacts
-                async.each(artifacts, app.services.artifacts.destroy, cb);
+                async.each(artifacts, _.partial(app.services.artifacts.destroy, game), cb);
             },
             // get the game's assets
             async.apply(app.services.assets.list, game, null),

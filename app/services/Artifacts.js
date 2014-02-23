@@ -176,7 +176,7 @@ module.exports = function (app, config){
     /**
      * Delete an artifact
      */
-    this.destroy = function(artifact, callback) {
+    this.destroy = function(game, artifact, callback) {
         if (!artifact || !artifact._id) return callback(new Error('No artifact id ' + artifact));
         dao.remove(artifact, function(err, artifact){
             if (err) return callback(err);

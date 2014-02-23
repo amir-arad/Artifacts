@@ -49,7 +49,7 @@ module.exports = function (app, config){
      * Delete an artifact
      */
     this.destroy = function(req, res, next) {
-        app.services.artifacts.destroy(req.artifact, function(err, artifact) {
+        app.services.artifacts.destroy(req.game, req.artifact, function(err, artifact) {
             if (err) return next(err);
             res.jsonp(artifact);
         });
