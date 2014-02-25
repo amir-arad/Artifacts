@@ -220,7 +220,7 @@ admin.controllers.groundController = function($scope, mapService, apiService, po
             return {
                 icon: {
                     iconUrl: artifact.iconUrl,
-                    iconSize: [71, 99]
+                    iconSize: [60, 60]
                 },
                 lng: artifact.location.coordinates[0],
                 lat: artifact.location.coordinates[1],
