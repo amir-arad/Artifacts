@@ -26,7 +26,7 @@ function baseArtifact(artifactId) {
 function enrichArtifactFromApi(artifact) {
     // https://github.com/mgonto/restangular#adding-custom-methods-to-collections
     function relativeUrl(relative){
-        return baseArtifact(artifact.name).one(relative).getRestangularUrl();
+        return relative ? baseArtifact(artifact.name).one(relative).getRestangularUrl() : '/img/potion.png';
     }
     artifact.iconUrl = relativeUrl(artifact.icon);
     artifact.images =
@@ -146,18 +146,41 @@ var module = angular.module('admin.services', ['restangular'])
             Array.prototype.splice.apply(repository, [0, repository.length].concat(newItems));
         }
 
-        var groundInit = $q.defer();
-        var ground = [];
+        var groundArtifactsInit = $q.defer();
+        var artifacts = [];
+        var playerssInit = $q.defer();
+        var players = [];
 
         apiSocket.on('ground:sync', function (newArtifacts, ack) {
             $log.debug('ground refresh');
             var enrichedArtifacts = _.forEach(newArtifacts, enrichArtifactFromApi);
-            replaceRepo(ground, newArtifacts);
-            groundInit.resolve();
+            replaceRepo(artifacts, newArtifacts);
+            groundArtifactsInit.resolve();
             ack();
         });
 
+
+        apiSocket.on('players:sync', function (newPlayers) {
+            $log.debug('players refresh');
+            replaceRepo(players, newPlayers);
+            playerssInit.resolve();
+        });
+        apiSocket.on('players:set', function (player) {
+            $log.debug('player update');
+            if (player.location) {
+                var idx = _.findIndex(players, { 'name': player.name });
+                if (~idx){    // exists. replace in players
+                    players[idx] = player;
+                } else {      // new. add to players
+                    players.push(player);
+                }
+            }
+        });
+
         var service = {
+            dataReady : $q.all([groundArtifactsInit.promise, playerssInit.promise]),
+            artifacts: artifacts,
+            players: players,
             init : function initApiService (gameId) {
                 $log.debug('context detected', gameId);
                 if (gameId){
@@ -441,119 +464,11 @@ var module = angular.module('admin.services', ['restangular'])
 
         return alertService;
     })
-
-//marker:
-//{
-//    lat: 38.716,
-//    lng: -9.13,
-//    message: "I'm a static marker",
-//    icon: {{icon}}
-// or:
-//{
-//    {
-//            lat: 59.91,
-//            lng: 10.75,
-//            message: "I want to travel here!",
-//            focus: true,
-//            draggable: false
-//    }
-//}
-// img icon:
-//{
-//    iconUrl: 'examples/img/leaf-green.png',
-//        shadowUrl: 'examples/img/leaf-shadow.png',
-//    iconSize:     [38, 95], // size of the icon
-//    shadowSize:   [50, 64], // size of the shadow
-//    iconAnchor:   [22, 94], // point of the icon which will correspond to marker's location
-//    shadowAnchor: [4, 62],  // the same for the shadow
-//    popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
-//}
-// div icon:
-//{
-//    type: 'div',
-//        iconSize: [230, 0],
-//    html: 'Using <strong>Bold text as an icon</strong>',
-//    popupAnchor:  [0, 0]
-//}
     .factory('mapService', function ($rootScope, $log, $q, apiSocket, apiService) {
-        var artifactMarkers = {};
-        var playerMarkers = {};
-        var allMarkers = {data:{}};
-        var artifactMarkersInit = $q.defer();
-        var playerMarkersInit = $q.defer();
-        apiSocket.on('ground:sync', function (newArtifacts, ack) {
-            $log.debug('ground refresh');
-            // convert artifacts to map markers and save to artifactMarkers
-            artifactMarkers = _.indexBy(_.map(newArtifacts, function (artifact) {
-                return {
-                    icon: {
-                        iconUrl: '/img/potion.png',
-                        iconSize:     [71, 99]
-                    },
-                    lng: artifact.location.coordinates[0],
-                    lat: artifact.location.coordinates[1],
-                    message: artifact.name,
-                    id : artifact.name,
-                    origLoc : artifact.location,
-                    draggable: true
-                };
-            }), _.partial(_.uniqueId, 'rtfct'));
-            allMarkers.data =  _.merge(playerMarkers, artifactMarkers);
-            artifactMarkersInit.resolve();
-            ack();
-        });
-
-        var relationalSize = function (origSize, factor){
-            return origSize * Math.min(50 + Math.pow(1.15, factor), 150) / 100;
-        };
-        var player2Marker = function (player) {
-            return {
-                icon: {
-                    iconUrl: '/img/player.png',
-                    iconSize:     [relationalSize(52, player.movement), relationalSize(125, player.movement)],
-                    iconAnchor:   [relationalSize(26, player.movement), relationalSize(125, player.movement)]
-                },
-                lng: player.location.coordinates[0],
-                lat: player.location.coordinates[1],
-                message: player.name,
-                draggable: false
-            };
-        };
-        apiSocket.on('players:sync', function (newPlayers) {
-            $log.debug('players refresh');
-            // convert players to map markers and save to playerMarkers
-            playerMarkers = _.indexBy(_.map(_.filter(newPlayers, 'location'), player2Marker)
-                , _.partial(_.uniqueId, 'plyr'));
-            allMarkers.data =  _.merge(playerMarkers, artifactMarkers);
-            playerMarkersInit.resolve();
-        });
-        apiSocket.on('players:set', function (player) {
-            $log.debug('player update');
-            if (player.location) {
-                // convert artifacts to map markers
-                var marker = player2Marker(player);
-                playerMarkers[marker.id] = marker;
-                allMarkers.data[marker.id] = marker;
-            }
-        });
         return {
-            ready : $q.all([artifactMarkersInit.promise, playerMarkersInit.promise]),
-            // bind to context by return value
-            markers: allMarkers,
             defaultPosition : { // some game site
                 lng: 34.811,
                 lat: 32.100
-            },
-            handleDrag : function(event, data){
-                var markerId = data.markerName;
-                if (!markerId.indexOf('rtfct')){    // starts with 'rtfct'
-                    var markerData = artifactMarkers[markerId];
-                    var from = markerData.origLoc;
-                    var to = _.clone(from, true);
-                    to.coordinates[0] = data.leafletEvent.target._latlng.lng;
-                    to.coordinates[1] = data.leafletEvent.target._latlng.lat;
-                    apiService.moveArtifact(markerData.id, from, to);
-                }
             }
         };
     });

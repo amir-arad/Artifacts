@@ -14,7 +14,7 @@ module.exports = function(app, config) {
             if (err) return callback(err);
             // for now compare previous list to new one by comparing result of toString
             var newIdsStr = _.pluck(list, elementIdAttr).sort().toString();
-            if (cachedIdsStr === newIdsStr) return callback('already sent to player');
+            if (cachedIdsStr === newIdsStr) return callback('already sent to client');
             socket.emit(listId + ':sync', list, function (foobar) {   // callback with no arguments triggers a client bug (client won't ack)
                 socket.set(listId, newIdsStr, function () {
                     return callback(null, list);

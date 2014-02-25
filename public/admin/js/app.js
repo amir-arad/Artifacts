@@ -76,8 +76,8 @@ angular.module('admin', ['admin.controllers', 'admin.directives', 'admin.filters
                         position: function (geoLocationService) {
                             return geoLocationService.query();
                         },
-                        mapDataReady: function (mapService) {
-                            return mapService.ready;
+                        dataReady: function (apiService) {
+                            return apiService.dataReady;
                         }
                     }
                 })

@@ -10,6 +10,7 @@ var util = require('util');
 var async = require('async');
 var Messaging = require('./Messaging');
 
+var PICK_UP_DISTANCE = 100;
 module.exports = function (app, config){
     /**
      * Module dependencies.
@@ -114,7 +115,7 @@ module.exports = function (app, config){
     this.move = function(game, fromLocation, toLocation, artifact, callback) {
         if (artifact.owner) return callback(new Error('Artifact '+artifact.name+' cannot be moved as it is owned by ' + artifact.owner));
         dao.selectAndUpdateFields(
-            {_id:artifact._id, 'game' : game._id, owner : null, 'location' : {'$near' : {'$geometry' : fromLocation , '$maxDistance' : 20}}},
+            {_id:artifact._id, 'game' : game._id, owner : null, 'location' : {'$near' : {'$geometry' : fromLocation , '$maxDistance' : PICK_UP_DISTANCE}}},
             {'location' : toLocation},
             ['location'],
             function(err, artifact){
@@ -138,21 +139,30 @@ module.exports = function (app, config){
             });
     };
 
-    this.drop = function(player, artifact, callback) {
+    this.drop = function(game, player, artifact, callback) {
         if (artifact.owner !== player.name) return callback(new Error('Artifact '+artifact.name+' cannot be dropped by ' + player.name));
         if (!player.location) return callback(new Error('Player '+player.name+' has no registered location'));
-        this.update(artifact, {location : player.location, owner : null}, callback);
+        dao.selectAndUpdateFields(
+            {_id:artifact._id, 'game' : game._id, owner : player.name},
+            {'location' : player.location},
+            {'location' : '$set', 'owner' : '$unset'},
+            function(err, artifact){
+                if (err) return callback(err);
+                app.services.messaging.emit([game.name, 'artifacts', player.name, 'remove'], artifact);
+                app.services.messaging.emit([game.name, 'artifacts', 'nearby', 'add'], artifact);
+                return callback(null, artifact);
+            });
     };
 
     this.pickup = function(game, player, artifact, callback) {
         if (artifact.owner) return callback(new Error('Artifact '+artifact.name+' cannot be picked up as it is owned by ' + artifact.owner));
         dao.selectAndUpdateFields(
-            {_id:artifact._id, 'game' : game._id, owner : null, 'location' : {'$near' : {'$geometry' : player.location , '$maxDistance' : 20}}},
+            {_id:artifact._id, 'game' : game._id, 'location' : {'$near' : {'$geometry' : player.location , '$maxDistance' : PICK_UP_DISTANCE}}},
             {owner : player.name},
             {'location' : '$unset', 'owner' : '$set'},
             function(err, artifact){
                 if (err) return callback(err);
-                app.services.messaging.emit([game.name, 'artifacts', artifact.owner, 'add'], artifact);
+                app.services.messaging.emit([game.name, 'artifacts', player.name, 'add'], artifact);
                 app.services.messaging.emit([game.name, 'artifacts', 'nearby', 'remove'], artifact);
                 return callback(null, artifact);
             });
@@ -168,7 +178,7 @@ module.exports = function (app, config){
     this.listNearLocation = function(location, game, callback) {
         var query = {'game' : game._id, 'owner' : null};
         if (location) {
-            query.location = {'$near' : {'$geometry' : location , '$maxDistance' : 20}};
+            query.location = {'$near' : {'$geometry' : location , '$maxDistance' : PICK_UP_DISTANCE}};
         }
         dao.list(query, callback);
     };

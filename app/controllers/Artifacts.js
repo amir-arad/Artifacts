@@ -71,7 +71,7 @@ module.exports = function (app, config){
      * Drop an item from the inventory
      */
     this.drop  = function(req, res, next) {
-        app.services.artifacts.drop(req.player, req.artifact, function(err, artifact) {
+        app.services.artifacts.drop(req.game, req.player, req.artifact, function(err, artifact) {
             if (err) return next(err);
             res.jsonp(artifact);
         });

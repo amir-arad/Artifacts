@@ -141,26 +141,123 @@ admin.controllers.playerListController =  function($rootScope, $scope, $log, $na
 };
 
 
-// TODO use game location marker
+
+//marker:
+//{
+//    lat: 38.716,
+//    lng: -9.13,
+//    message: "I'm a static marker",
+//    icon: {{icon}}
+// or:
+//{
+//    {
+//            lat: 59.91,
+//            lng: 10.75,
+//            message: "I want to travel here!",
+//            focus: true,
+//            draggable: false
+//    }
+//}
+// img icon:
+//{
+//    iconUrl: 'examples/img/leaf-green.png',
+//        shadowUrl: 'examples/img/leaf-shadow.png',
+//    iconSize:     [38, 95], // size of the icon
+//    shadowSize:   [50, 64], // size of the shadow
+//    iconAnchor:   [22, 94], // point of the icon which will correspond to marker's location
+//    shadowAnchor: [4, 62],  // the same for the shadow
+//    popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
+//}
+// div icon:
+//{
+//    type: 'div',
+//        iconSize: [230, 0],
+//    html: 'Using <strong>Bold text as an icon</strong>',
+//    popupAnchor:  [0, 0]
+//}
+// TODO use and set game location marker
 // TODO https://github.com/leaflet-extras/leaflet-providers
 // http://tombatossals.github.io/angular-leaflet-directive/examples/layers-example.html
 // http://tombatossals.github.io/angular-leaflet-directive/#!/examples/tiles
-admin.controllers.groundController = function($scope, mapService, position) {
+admin.controllers.groundController = function($scope, mapService, apiService, position) {
 
-    $scope.$on('leafletDirectiveMarker.dragend', mapService.handleDrag);
-    $scope.events= {
+    $scope.$on('leafletDirectiveMarker.dragend', function(event, data){
+        var markerId = data.markerName;
+        if (!markerId.indexOf('rtfct')){    // starts with 'rtfct'
+            event.preventDefault();
+            var markerData = artifactMarkers[markerId];
+            var from = markerData.origLoc;
+            var to = _.clone(from, true);
+            to.coordinates[0] = data.leafletEvent.target._latlng.lng;
+            to.coordinates[1] = data.leafletEvent.target._latlng.lat;
+            apiService.moveArtifact(markerData.id, from, to);
+        }
+    });
+    $scope.data = {};
+    $scope.data.events= {
         map: {
             enable: ['dragend'],
                 logic: 'emit'
         }
     };
-    $scope.center =  {
+    $scope.data.center =  {
         lat: position.latitude || mapService.defaultPosition.lat,
         lng: position.longitude || mapService.defaultPosition.lng,
         zoom: 17
     };
-    $scope.markers =  mapService.markers;
-    $scope.layers = {
+
+    $scope.data.artifacts = apiService.artifacts;
+    $scope.data.players = apiService.players;
+    var playerMarkers = {}, artifactMarkers = {};
+
+    var relationalSize = function (origSize, factor){
+        return origSize * Math.min(50 + Math.pow(1.15, factor), 150) / 100;
+    };
+
+
+    var refreshRtfctMarkers = function() {
+        artifactMarkers = _.indexBy(_.map(apiService.artifacts, function (artifact) {
+            return {
+                icon: {
+                    iconUrl: artifact.iconUrl,
+                    iconSize: [71, 99]
+                },
+                lng: artifact.location.coordinates[0],
+                lat: artifact.location.coordinates[1],
+                message: artifact.name,
+                id: artifact.name,
+                origLoc: artifact.location,
+                draggable: true
+            };
+        }), function (rtfct) {
+            return 'rtfct' + rtfct.message;
+        });
+        $scope.data.markers = _.merge(playerMarkers, artifactMarkers);
+    }
+    var refreshPlyrMarkers = function() {
+        playerMarkers = _.indexBy(_.map(_.filter(apiService.players, 'location'), function (player) {
+            return {
+                icon: {
+                    iconUrl: '/img/player.png',
+                    iconSize: [relationalSize(52, player.movement), relationalSize(125, player.movement)],
+                    iconAnchor: [relationalSize(26, player.movement), relationalSize(125, player.movement)]
+                },
+                lng: player.location.coordinates[0],
+                lat: player.location.coordinates[1],
+                message: player.name,
+                draggable: false
+            };
+        }), function (plyr) {
+            return 'plyr' + plyr.message;
+        });
+        $scope.data.markers = _.merge(playerMarkers, artifactMarkers);
+    }
+
+    $scope.$watch('data.artifacts', refreshRtfctMarkers, true);
+    $scope.$watch('data.players', refreshPlyrMarkers, true);
+
+    $scope.data.markers = _.merge(playerMarkers, artifactMarkers);
+    $scope.data.layers = {
         baselayers: {
             cycle: {
                 name: 'OpenCycleMap',
@@ -239,7 +336,7 @@ admin.controllers.groundController = function($scope, mapService, position) {
         }
     };
 
-    $scope.defaults = {
+    $scope.data.defaults = {
         minZoom: 12,
         doubleClickZoom: true,
         scrollWheelZoom: true,
